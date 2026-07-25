@@ -73,6 +73,7 @@
       border-radius:10px;
       padding:4px;
       flex-wrap:wrap;
+      align-items:center;
     }
     .tool-btn{
       font-family:'Battambang', 'Courier New', ui-monospace, monospace;
@@ -140,6 +141,19 @@
     }
     .text-btn.danger{ margin-left:auto; color:#8a2f1f; }
     .text-btn.danger:hover{ background:#f6dfd8; border-color:#8a2f1f; }
+
+    .img-select{
+      font-family:'Battambang', 'Courier New', ui-monospace, monospace;
+      font-size:11.5px;
+      background:var(--card);
+      border:1px solid var(--line);
+      color:var(--ink);
+      padding:6px 8px;
+      border-radius:7px;
+      cursor:pointer;
+      letter-spacing:.02em;
+    }
+    .img-select:hover{ border-color:var(--accent); }
 
     .homeBtn{
       font-family:'Battambang', 'Courier New', ui-monospace, monospace;
@@ -225,12 +239,22 @@
     .stage-image{
       position:relative;
       display:flex;
+      flex-direction:column;
       align-items:center;
       justify-content:center;
       min-height:320px;
       background:var(--paper);
       padding:16px;
       overflow:hidden;
+    }
+    .image-select-bar{
+      position:absolute;
+      top:10px;
+      right:10px;
+      z-index:3;
+      display:flex;
+      align-items:center;
+      gap:6px;
     }
     .preview-image{
       max-width:100%;
@@ -295,14 +319,26 @@
     <div class="tool-group" role="tablist" aria-label="Mode">
       <button class="tool-btn active" data-mode="type">✎ Type</button>
       <button class="tool-btn" data-mode="highlight">▤ Highlight</button>
-      <button class="tool-btn" data-mode="draw">✏ Draw</button>
       <button class="tool-btn" data-mode="move">✥ Move</button>
       <button onclick="window.location.href='../index.html'" class="homeBtn">🏡 Home</button>
+    </div>
+
+    <div class="tool-group" aria-label="Draw toggle">
+      <button id="drawToggleBtn" class="tool-btn" data-toggle="draw" title="Draw anytime, no need to switch modes">✏ Draw</button>
     </div>
 
     <div class="tool-group" aria-label="Font size">
       <button id="fontMinus" class="tool-btn font-btn" title="Smaller text">A−</button>
       <button id="fontPlus" class="tool-btn font-btn" title="Larger text">A+</button>
+    </div>
+
+    <div class="tool-group" aria-label="Reference image">
+      <span class="bar-label">image</span>
+      <select id="imageSelect" class="img-select" title="Choose which reference image to display">
+        <option value="1.svg">First</option>
+        <option value="2.svg">Second</option>
+        <option value="sub.svg">Sub</option>
+      </select>
     </div>
 
     <div id="highlightBar" class="sub-bar" style="display:none;">
@@ -361,7 +397,8 @@
   const imageCtx = imageCanvas.getContext('2d');
   const stageImage = document.querySelector('.stage-image');
 
-  let mode = 'type'; // 'type' | 'highlight' | 'draw' | 'move'
+  let mode = 'type'; // 'type' | 'highlight' | 'move'
+  let drawEnabled = false; // drawing is an independent overlay, not an exclusive mode
   let highlightColor = '#FFE066';
   let drawColor = '#2A2622';
   let drawSize = 4;
@@ -435,7 +472,7 @@
   }
 
   function startDraw(surface, e){
-    if(mode !== 'draw') return;
+    if(!drawEnabled) return;
     surface.drawing = true;
     lastUsedSurface = surface;
     const p = getPos(surface.canvas, e);
@@ -477,31 +514,37 @@
     cv.addEventListener('touchend', () => endDraw(surface));
   });
 
+  function updateCanvasInteractivity(){
+    canvas.style.pointerEvents = drawEnabled ? 'auto' : 'none';
+    canvas.style.cursor = drawEnabled ? 'crosshair' : 'default';
+    imageCanvas.style.pointerEvents = drawEnabled ? 'auto' : 'none';
+    imageCanvas.style.cursor = drawEnabled ? 'crosshair' : 'default';
+  }
+
+  function setDrawEnabled(next){
+    drawEnabled = next;
+    document.getElementById('drawToggleBtn').classList.toggle('active', drawEnabled);
+    document.getElementById('drawBar').style.display = drawEnabled ? 'flex' : 'none';
+    updateCanvasInteractivity();
+  }
+
+  document.getElementById('drawToggleBtn').addEventListener('click', () => setDrawEnabled(!drawEnabled));
+
   function setMode(next){
     mode = next;
-    document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    document.querySelectorAll('.tool-btn[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
     document.getElementById('highlightBar').style.display = mode === 'highlight' ? 'flex' : 'none';
-    document.getElementById('drawBar').style.display = mode === 'draw' ? 'flex' : 'none';
     document.getElementById('moveBar').style.display = mode === 'move' ? 'flex' : 'none';
     textLayer.classList.toggle('move-mode', mode === 'move');
 
-    if(mode === 'draw'){
-      canvas.style.pointerEvents = 'auto';
-      canvas.style.cursor = 'crosshair';
-      imageCanvas.style.pointerEvents = 'auto';
-      imageCanvas.style.cursor = 'crosshair';
-      textLayer.setAttribute('contenteditable', 'false');
-    } else if(mode === 'move'){
-      canvas.style.pointerEvents = 'none';
-      imageCanvas.style.pointerEvents = 'none';
+    if(mode === 'move'){
       textLayer.setAttribute('contenteditable', 'false');
       shatterText();
     } else {
-      canvas.style.pointerEvents = 'none';
-      imageCanvas.style.pointerEvents = 'none';
       textLayer.setAttribute('contenteditable', 'true');
-      if(mode === 'type') textLayer.focus();
+      if(mode === 'type' && !drawEnabled) textLayer.focus();
     }
+    updateCanvasInteractivity();
   }
 
   // ---- Font size ----
@@ -604,9 +647,14 @@
   }
   document.getElementById('resetPositionsBtn').addEventListener('click', resetLetterPositions);
 
-  // ---- Right-side image: a.jpg is already loaded in the img tag ----
+  // ---- Right-side image: chosen via the image dropdown, defaults to image/1.svg ----
   const previewImage = document.getElementById('previewImage');
   const imagePlaceholder = document.getElementById('imagePlaceholder');
+  const imageSelect = document.getElementById('imageSelect');
+
+  imageSelect.addEventListener('change', function(){
+    previewImage.src = 'image/' + this.value;
+  });
 
   previewImage.addEventListener('error', function() {
     this.style.display = 'none';
@@ -627,7 +675,7 @@
     imagePlaceholder.style.display = 'block';
   }
 
-  document.querySelectorAll('.tool-btn').forEach(btn => {
+  document.querySelectorAll('.tool-btn[data-mode]').forEach(btn => {
     btn.addEventListener('click', () => setMode(btn.dataset.mode));
   });
 
@@ -715,6 +763,7 @@
   window.addEventListener('load', () => {
     sizeCanvasToLayer();
     setMode('type');
+    updateCanvasInteractivity();
   });
 </script>
 </body>
