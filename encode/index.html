@@ -136,6 +136,21 @@
     .text-btn.danger{ margin-left:auto; color:#8a2f1f; }
     .text-btn.danger:hover{ background:#f6dfd8; border-color:#8a2f1f; }
 
+    .homeBtn{
+      font-family:'Battambang', 'Courier New', ui-monospace, monospace;
+      font-size:clamp(12px, 3vw, 13px);
+      background:transparent;
+      border:none;
+      color:var(--ink);
+      padding:7px 12px;
+      border-radius:7px;
+      cursor:pointer;
+      white-space:nowrap;
+      transition:background .15s, color .15s;
+    }
+    .homeBtn:hover{ background:#00000008; }
+    .homeBtn:active{ transform:scale(0.96); }
+
     /* Stage — split into a typing/drawing half and an image half */
     .stage{
       position:relative;
@@ -275,6 +290,7 @@
       <button class="tool-btn" data-mode="highlight">▤ Highlight</button>
       <button class="tool-btn" data-mode="draw">✏ Draw</button>
       <button class="tool-btn" data-mode="move">✥ Move</button>
+      <button onclick="window.location.href='../index.html'" class="homeBtn">🏡 Home</button>
     </div>
 
     <div class="tool-group" aria-label="Font size">
