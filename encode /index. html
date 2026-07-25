@@ -1,1 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mark & Draw — Type, Highlight, Sketch</title>
+<style>
+  :root{
+    --paper:#FAF6EE;
+    --card:#FFFEFB;
+    --ink:#2A2622;
+    --muted:#8a8272;
+    --line:#E7E0D1;
+    --accent:#C1652F;
+    --accent-soft:#F1E3D3;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 1px 1px, #00000009 1px, transparent 0) 0 0/22px 22px,
+      var(--paper);
+    font-family:'Courier New', ui-monospace, monospace;
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:36px 16px 72px;
+  }
+  h1{
+    font-family:Georgia, 'Times New Roman', serif;
+    font-weight:600;
+    font-size:30px;
+    letter-spacing:-0.01em;
+    margin:0 0 4px;
+  }
+  .sub{
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:26px;
+    text-transform:uppercase;
+    letter-spacing:0.09em;
+    text-align:center;
+  }
+
+  /* Toolbar — the "pen tray" */
+  .toolbar{
+    width:min(820px, 94vw);
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px 14px;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:10px 16px;
+    box-shadow:0 1px 0 #fff inset, 0 8px 20px -14px #00000030;
+    margin-bottom:0;
+  }
+  .tool-group{
+    display:flex;
+    gap:6px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:4px;
+  }
+  .tool-btn{
+    font-family:'Courier New', ui-monospace, monospace;
+    font-size:13px;
+    border:none;
+    background:transparent;
+    color:var(--ink);
+    padding:7px 12px;
+    border-radius:7px;
+    cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  .tool-btn:hover{ background:#00000008; }
+  .tool-btn.active{
+    background:var(--accent);
+    color:#fff;
+  }
+  .sub-bar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .bar-label{
+    font-size:11px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    margin-right:2px;
+  }
+  .hl-swatch, .pen-swatch{
+    width:22px; height:22px;
+    border-radius:50%;
+    border:2px solid #ffffffcc;
+    outline:1px solid var(--line);
+    cursor:pointer;
+    padding:0;
+  }
+  .hl-swatch.active, .pen-swatch.active{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
+  input[type="range"]{ accent-color: var(--accent); width:90px; }
+  .text-btn{
+    font-family:'Courier New', ui-monospace, monospace;
+    font-size:11.5px;
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink);
+    padding:6px 10px;
+    border-radius:7px;
+    cursor:pointer;
+    letter-spacing:.02em;
+  }
+  .text-btn:hover{ background:var(--accent-soft); border-color:var(--accent); }
+  .text-btn.danger{ margin-left:auto; color:#8a2f1f; }
+  .text-btn.danger:hover{ background:#f6dfd8; border-color:#8a2f1f; }
+
+  /* Stage — split into a typing/drawing half and an image half */
+  .stage{
+    position:relative;
+    width:min(1100px, 96vw);
+    margin-top:16px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow:0 1px 0 #fff inset, 0 14px 34px -20px #00000040;
+    overflow:hidden;
+    display:flex;
+    align-items:stretch;
+  }
+  .stage-half{
+    position:relative;
+    flex:1 1 50%;
+    min-width:0;
+  }
+  .stage-text{
+    border-right:1px solid var(--line);
+  }
+  .text-layer{
+    position:relative;
+    z-index:1;
+    padding:34px 36px;
+    min-height:420px;
+    height:100%;
+    font-size:16px;
+    line-height:1.75;
+    outline:none;
+    white-space:pre-wrap;
+    word-wrap:break-word;
+  }
+  .text-layer:empty:before{
+    content: attr(data-placeholder);
+    color:#b8ae9c;
+  }
+  .letter{
+    position:absolute;
+    pointer-events:none;
+    user-select:none;
+    white-space:pre;
+  }
+  .text-layer.move-mode .letter{
+    pointer-events:auto;
+    cursor:grab;
+  }
+  .text-layer.move-mode .letter.dragging{
+    cursor:grabbing;
+    z-index:5;
+  }
+  .font-btn{
+    font-family:Georgia, serif;
+    font-weight:700;
+  }
+  .draw-canvas{
+    position:absolute;
+    top:0; left:0;
+    z-index:2;
+    pointer-events:none;
+  }
+
+  .stage-image{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:420px;
+    background:var(--paper);
+    padding:20px;
+  }
+  .preview-image{
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+    border-radius:8px;
+    display:none;
+  }
+  .image-placeholder{
+    text-align:center;
+    padding:24px;
+    font-size:11.5px;
+    color:var(--muted);
+    line-height:1.6;
+    max-width:220px;
+  }
+  .image-placeholder code{
+    background:var(--accent-soft);
+    padding:1px 5px;
+    border-radius:4px;
+  }
+
+  .hint{
+    width:min(1100px, 96vw);
+    font-size:11.5px;
+    color:var(--muted);
+    margin-top:10px;
+    line-height:1.6;
+  }
+
+  @media (max-width:760px){
+    .stage{ flex-direction:column; }
+    .stage-text{ border-right:none; border-bottom:1px solid var(--line); }
+    .stage-image{ min-height:280px; }
+  }
+  @media (max-width:600px){
+    .text-btn.danger{ margin-left:0; }
+    .toolbar{ gap:8px 12px; }
+  }
+</style>
+</head>
+<body>
+
+  <h1>Mark &amp; Draw</h1>
+  <div class="sub">type it · highlight it · sketch on it</div>
+
+  <div class="toolbar">
+    <div class="tool-group" role="tablist" aria-label="Mode">
+      <button class="tool-btn active" data-mode="type">✎ Type</button>
+      <button class="tool-btn" data-mode="highlight">▤ Highlight</button>
+      <button class="tool-btn" data-mode="draw">✏ Draw</button>
+      <button class="tool-btn" data-mode="move">✥ Move</button>
+    </div>
+
+    <div class="tool-group" aria-label="Font size">
+      <button id="fontMinus" class="tool-btn font-btn" title="Smaller text">A−</button>
+      <button id="fontPlus" class="tool-btn font-btn" title="Larger text">A+</button>
+    </div>
+
+    <div id="highlightBar" class="sub-bar" style="display:none;">
+      <span class="bar-label">color</span>
+      <button class="hl-swatch active" data-color="#FFE066" style="background:#FFE066" title="Yellow"></button>
+      <button class="hl-swatch" data-color="#B9F6CA" style="background:#B9F6CA" title="Green"></button>
+      <button class="hl-swatch" data-color="#FFB3C6" style="background:#FFB3C6" title="Pink"></button>
+      <button class="hl-swatch" data-color="#A0E7FF" style="background:#A0E7FF" title="Blue"></button>
+      <button class="hl-swatch" data-color="#D9C4FF" style="background:#D9C4FF" title="Purple"></button>
+      <button id="clearHighlightBtn" class="text-btn">clear highlights</button>
+    </div>
+
+    <div id="drawBar" class="sub-bar" style="display:none;">
+      <span class="bar-label">color</span>
+      <button class="pen-swatch active" data-color="#2A2622" style="background:#2A2622" title="Ink"></button>
+      <button class="pen-swatch" data-color="#C1652F" style="background:#C1652F" title="Amber"></button>
+      <button class="pen-swatch" data-color="#2E6E9E" style="background:#2E6E9E" title="Blue"></button>
+      <button class="pen-swatch" data-color="#3E8E5A" style="background:#3E8E5A" title="Green"></button>
+      <button class="pen-swatch" data-color="#B3243D" style="background:#B3243D" title="Red"></button>
+      <span class="bar-label">size</span>
+      <input type="range" id="penSize" min="1" max="24" value="4">
+      <button id="undoBtn" class="text-btn">undo stroke</button>
+      <button id="clearDrawBtn" class="text-btn">clear drawing</button>
+    </div>
+
+    <div id="moveBar" class="sub-bar" style="display:none;">
+      <span class="bar-label">drag any letter to move it</span>
+      <button id="resetPositionsBtn" class="text-btn">reset layout</button>
+    </div>
+
+    <button id="clearTextBtn" class="text-btn danger">clear text</button>
+  </div>
+
+  <div id="stage" class="stage">
+    <div class="stage-half stage-text">
+      <div id="textLayer" class="text-layer" contenteditable="true" data-placeholder="Start typing here…"></div>
+      <canvas id="drawCanvas" class="draw-canvas"></canvas>
+    </div>
+    <div class="stage-half stage-image">
+      <img id="previewImage" class="preview-image" alt="Reference image">
+      <div id="imagePlaceholder" class="image-placeholder">
+        Save an image at <code>images/photo.jpg</code> next to this page and refresh — it'll appear here automatically.
+      </div>
+    </div>
+  </div>
+
+  <div class="hint">
+    Type mode: click into the left side and write normally. Highlight mode: click and drag over text to mark it — click a color first to change the marker. Draw mode: click and drag anywhere on the left side to sketch; typing is locked while drawing so your strokes land in the right place. A− / A+ resizes the text. Move mode breaks your text into individual letters you can drag anywhere — finish typing before switching to it, since it locks the layout in place. The right side shows an image automatically once you save one at <code>images/photo.jpg</code> next to this page.
+  </div>
+
+<script>
+  const textLayer = document.getElementById('textLayer');
+  const canvas = document.getElementById('drawCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let mode = 'type'; // 'type' | 'highlight' | 'draw' | 'move'
+  let highlightColor = '#FFE066';
+  let drawColor = '#2A2622';
+  let drawSize = 4;
+  let strokes = [];
+  let currentStroke = null;
+  let drawing = false;
+  let fontSize = 16;
+  let isShattered = false;
+
+  function sizeCanvasToLayer(){
+    const w = Math.max(textLayer.offsetWidth, textLayer.scrollWidth);
+    const h = Math.max(textLayer.offsetHeight, textLayer.scrollHeight, 420);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    redrawStrokes();
+  }
+
+  function redrawStrokes(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    strokes.forEach(s => {
+      if(s.points.length < 1) return;
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.size;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(s.points[0].x, s.points[0].y);
+      for(let i = 1; i < s.points.length; i++){
+        ctx.lineTo(s.points[i].x, s.points[i].y);
+      }
+      ctx.stroke();
+    });
+  }
+
+  function getPos(e){
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+
+  function startDraw(e){
+    if(mode !== 'draw') return;
+    drawing = true;
+    const p = getPos(e);
+    currentStroke = { color: drawColor, size: drawSize, points: [p] };
+    strokes.push(currentStroke);
+    e.preventDefault();
+  }
+  function moveDraw(e){
+    if(!drawing || !currentStroke) return;
+    const p = getPos(e);
+    const pts = currentStroke.points;
+    const last = pts[pts.length - 1];
+    pts.push(p);
+    ctx.strokeStyle = currentStroke.color;
+    ctx.lineWidth = currentStroke.size;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(last.x, last.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    e.preventDefault();
+  }
+  function endDraw(){
+    drawing = false;
+    currentStroke = null;
+  }
+
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', moveDraw);
+  window.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('touchstart', startDraw, { passive:false });
+  canvas.addEventListener('touchmove', moveDraw, { passive:false });
+  canvas.addEventListener('touchend', endDraw);
+
+  function setMode(next){
+    mode = next;
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    document.getElementById('highlightBar').style.display = mode === 'highlight' ? 'flex' : 'none';
+    document.getElementById('drawBar').style.display = mode === 'draw' ? 'flex' : 'none';
+    document.getElementById('moveBar').style.display = mode === 'move' ? 'flex' : 'none';
+    textLayer.classList.toggle('move-mode', mode === 'move');
+
+    if(mode === 'draw'){
+      canvas.style.pointerEvents = 'auto';
+      canvas.style.cursor = 'crosshair';
+      textLayer.setAttribute('contenteditable', 'false');
+    } else if(mode === 'move'){
+      canvas.style.pointerEvents = 'none';
+      textLayer.setAttribute('contenteditable', 'false');
+      shatterText();
+    } else {
+      canvas.style.pointerEvents = 'none';
+      textLayer.setAttribute('contenteditable', 'true');
+      if(mode === 'type') textLayer.focus();
+    }
+  }
+
+  // ---- Font size ----
+  function updateFontSize(delta){
+    fontSize = Math.min(44, Math.max(12, fontSize + delta));
+    textLayer.style.fontSize = fontSize + 'px';
+    sizeCanvasToLayer();
+  }
+  document.getElementById('fontMinus').addEventListener('click', () => updateFontSize(-2));
+  document.getElementById('fontPlus').addEventListener('click', () => updateFontSize(2));
+
+  // ---- Move mode: shatter text into individually draggable letters ----
+  function getClientPos(e){
+    if(e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  function attachDrag(letter){
+    let dragOffsetX = 0, dragOffsetY = 0, isDragging = false;
+
+    function onDown(e){
+      if(mode !== 'move') return;
+      isDragging = true;
+      letter.classList.add('dragging');
+      const p = getClientPos(e);
+      const rect = letter.getBoundingClientRect();
+      dragOffsetX = p.x - rect.left;
+      dragOffsetY = p.y - rect.top;
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    function onMove(e){
+      if(!isDragging) return;
+      const p = getClientPos(e);
+      const stageRect = textLayer.getBoundingClientRect();
+      letter.style.left = (p.x - stageRect.left - dragOffsetX) + 'px';
+      letter.style.top = (p.y - stageRect.top - dragOffsetY) + 'px';
+      e.preventDefault();
+    }
+    function onUp(){
+      isDragging = false;
+      letter.classList.remove('dragging');
+    }
+
+    letter.addEventListener('mousedown', onDown);
+    letter.addEventListener('touchstart', onDown, { passive:false });
+    window.addEventListener('mousemove', onMove, { passive:false });
+    window.addEventListener('touchmove', onMove, { passive:false });
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchend', onUp);
+  }
+
+  function shatterText(){
+    if(isShattered) return;
+    const rawText = textLayer.innerText || '';
+    textLayer.innerHTML = '';
+    if(!rawText.trim()){ isShattered = true; return; }
+
+    // Step 1: lay characters out normally so the browser computes natural wrapping
+    const lines = rawText.split('\n');
+    const flowSpans = [];
+    lines.forEach((line, li) => {
+      [...line].forEach(ch => {
+        const span = document.createElement('span');
+        span.textContent = ch === ' ' ? '\u00A0' : ch;
+        textLayer.appendChild(span);
+        flowSpans.push(span);
+      });
+      if(li < lines.length - 1) textLayer.appendChild(document.createElement('br'));
+    });
+
+    // Step 2: measure each character's natural position relative to the text layer
+    const stageRect = textLayer.getBoundingClientRect();
+    const positions = flowSpans.map(span => {
+      const r = span.getBoundingClientRect();
+      return { left: r.left - stageRect.left, top: r.top - stageRect.top, text: span.textContent };
+    });
+
+    // Step 3: rebuild as absolutely-positioned, independently draggable letters
+    textLayer.innerHTML = '';
+    positions.forEach(pos => {
+      const letter = document.createElement('span');
+      letter.className = 'letter';
+      letter.textContent = pos.text;
+      letter.style.left = pos.left + 'px';
+      letter.style.top = pos.top + 'px';
+      letter.dataset.origLeft = pos.left;
+      letter.dataset.origTop = pos.top;
+      textLayer.appendChild(letter);
+      attachDrag(letter);
+    });
+    isShattered = true;
+  }
+
+  function resetLetterPositions(){
+    textLayer.querySelectorAll('.letter').forEach(letter => {
+      letter.style.left = letter.dataset.origLeft + 'px';
+      letter.style.top = letter.dataset.origTop + 'px';
+    });
+  }
+  document.getElementById('resetPositionsBtn').addEventListener('click', resetLetterPositions);
+
+  // ---- Right-side image: auto-loaded from an "images" folder next to this file ----
+  const imagePlaceholder = document.getElementById('imagePlaceholder');
+  const previewImage = document.getElementById('previewImage');
+
+  function showImage(path){
+    previewImage.src = path;
+    previewImage.style.display = 'block';
+    imagePlaceholder.style.display = 'none';
+  }
+
+  // Put your image at images/photo.jpg (same folder as this HTML file) and refresh —
+  // no upload needed, it appears here on its own.
+  (function tryAutoLoadFromImagesFolder(){
+    const IMAGE_PATH = 'images/photo.jpg';
+    const probe = new Image();
+    probe.onload = () => showImage(IMAGE_PATH);
+    probe.onerror = () => {}; // no file there yet — keep the placeholder showing
+    probe.src = IMAGE_PATH;
+  })();
+
+  document.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.addEventListener('click', () => setMode(btn.dataset.mode));
+  });
+
+  // Apply highlight when a selection is released in highlight mode
+  document.addEventListener('mouseup', () => {
+    if(mode !== 'highlight') return;
+    const sel = window.getSelection();
+    if(!sel || sel.isCollapsed) return;
+    if(!textLayer.contains(sel.anchorNode)) return;
+    applyHighlight(highlightColor);
+  });
+
+  function applyHighlight(color){
+    try{ document.execCommand('styleWithCSS', false, true); }catch(e){}
+    try{
+      document.execCommand('hiliteColor', false, color);
+    }catch(e){
+      try{ document.execCommand('backColor', false, color); }catch(e2){}
+    }
+  }
+
+  document.querySelectorAll('.hl-swatch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      highlightColor = sw.dataset.color;
+      document.querySelectorAll('.hl-swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.pen-swatch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      drawColor = sw.dataset.color;
+      document.querySelectorAll('.pen-swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+    });
+  });
+
+  document.getElementById('penSize').addEventListener('input', e => {
+    drawSize = Number(e.target.value);
+  });
+
+  document.getElementById('clearDrawBtn').addEventListener('click', () => {
+    strokes = [];
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  });
+
+  document.getElementById('undoBtn').addEventListener('click', () => {
+    strokes.pop();
+    redrawStrokes();
+  });
+
+  document.getElementById('clearHighlightBtn').addEventListener('click', () => {
+    const range = document.createRange();
+    range.selectNodeContents(textLayer);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    applyHighlight('transparent');
+    sel.removeAllRanges();
+  });
+
+  document.getElementById('clearTextBtn').addEventListener('click', () => {
+    if(confirm('Clear all typed text? This won\'t affect your drawing.')){
+      textLayer.innerHTML = '';
+      isShattered = false;
+      if(mode === 'type') textLayer.focus();
+    }
+  });
+
+  const ro = new ResizeObserver(() => sizeCanvasToLayer());
+  ro.observe(textLayer);
+  window.addEventListener('resize', sizeCanvasToLayer);
+  window.addEventListener('load', () => {
+    sizeCanvasToLayer();
+    setMode('type');
+  });
+</script>
+</body>
+</html>
 
