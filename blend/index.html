@@ -1,1 +1,227 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Khmer 26 Grid</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&display=swap');
 
+* {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    font-family: "Battambang", Arial, sans-serif;
+    background: #f2f6ff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(10px, 3vw, 20px);
+    padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(clamp(10px, 3vw, 20px) + env(safe-area-inset-left, 0px));
+    padding-right: calc(clamp(10px, 3vw, 20px) + env(safe-area-inset-right, 0px));
+}
+
+h2 {
+    font-size: clamp(16px, 4vw, 22px);
+    margin: 10px 0;
+    text-align: center;
+}
+
+input {
+    width: 100%;
+    max-width: 320px;
+    padding: clamp(10px, 3vw, 14px);
+    font-size: clamp(18px, 5vw, 28px);
+    text-align: center;
+    border: 2px solid #4a90e2;
+    border-radius: 10px;
+    outline: none;
+    background: white;
+    color: #222;
+}
+
+input:focus {
+    border-color: #2f6fc4;
+    box-shadow: 0 0 0 3px rgba(74,144,226,0.25);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+    gap: clamp(6px, 1.5vw, 10px);
+    width: 100%;
+    max-width: 640px;
+    margin-top: 12px;
+}
+
+.cell {
+    aspect-ratio: 1;
+    background: white;
+    border-radius: 10px;
+    border: 2px solid #ddd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: clamp(18px, 5vw, 34px);
+    font-weight: bold;
+    transition: 0.15s;
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    line-height: 1.1;
+    padding: 4px;
+    overflow: hidden;
+}
+
+.cell:hover {
+    border-color: #9cc4f0;
+}
+
+.cell.active {
+    background: #dff3ff;
+    border-color: #4a90e2;
+}
+
+.cell.selected {
+    transform: scale(1.08);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    border-color: #222;
+}
+
+/* Wider screens: keep cells from becoming huge, cap columns nicely */
+@media (min-width: 700px) {
+    .grid {
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    }
+}
+
+@media (min-width: 1000px) {
+    .grid {
+        max-width: 760px;
+    }
+}
+
+/* Short / landscape screens on phones: shrink vertical spacing */
+@media (max-height: 480px) {
+    body {
+        padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    }
+    h2 {
+        margin: 6px 0;
+    }
+    .grid {
+        gap: 6px;
+    }
+}
+
+/* Very small phones */
+@media (max-width: 340px) {
+    .grid {
+        grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+    }
+}
+
+/* 🏡 Home Button */
+.homeBtn {
+    position: fixed;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 20px;
+    font-size: clamp(15px, 4vw, 18px);
+    border: none;
+    border-radius: 12px;
+    background: #4a90e2;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    white-space: nowrap;
+}
+
+.homeBtn:active {
+    transform: translateX(-50%) scale(0.96);
+}
+</style>
+</head>
+<body>
+
+<h2>ព្យញ្ជនៈផ្សំស្រៈ</h2>
+<input id="khmerInput" maxlength="1" placeholder="បញ្ចូលព្យញ្ជនៈ..." inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" />
+<div class="grid" id="grid"></div>
+
+<!-- 🏡 Home Button -->
+<button onclick="window.location.href='../index.html'" class="homeBtn">
+    🏡 Home
+</button>
+
+<script>
+const vowels = [
+    " ","ា","ិ","ី","ឹ","ឺ",
+    "ុ","ូ","ួ","ើ","ឿ",
+    "ៀ","េ","ែ","ៃ","ោ",
+    "ៅ","ុំ","ំ","ាំ","ះ",
+    "ុះ","េះ","ោះ"
+];
+
+const blueConsonants = new Set([
+    "ក","ខ","ច","ឆ","ដ","ឋ","ណ","ត","ថ","ប","ផ","ស","ហ","ឡ","អ"
+]);
+
+const redConsonants = new Set([
+    "គ","ឃ","ង","ជ","ឈ","ញ","ឌ","ឍ","ទ","ធ","ន","ព","ភ","ម","យ","រ","ល","វ"
+]);
+
+const grid = document.getElementById("grid");
+const input = document.getElementById("khmerInput");
+
+for (let i = 0; i < vowels.length; i++) {
+    const div = document.createElement("div");
+    div.className = "cell";
+    div.dataset.vowel = vowels[i];
+    div.textContent = vowels[i];
+    div.addEventListener("click", () => {
+        document.querySelectorAll(".cell").forEach(c => c.classList.remove("selected"));
+        div.classList.add("selected");
+    });
+    grid.appendChild(div);
+}
+
+const cells = document.querySelectorAll(".cell");
+
+function getColor(consonant) {
+    if (blueConsonants.has(consonant)) return "#2f5fbf";
+    if (redConsonants.has(consonant)) return "#c0392b";
+    return "#222";
+}
+
+function updateGrid(consonant) {
+    const color = getColor(consonant);
+    cells.forEach(cell => {
+        cell.textContent = consonant + cell.dataset.vowel;
+        cell.classList.add("active");
+        cell.style.color = color;
+    });
+}
+
+input.addEventListener("input", () => {
+    let c = input.value.trim();
+    if (!c) return;
+    updateGrid(c);
+    input.value = "";
+});
+</script>
+
+</body>
+</html>
