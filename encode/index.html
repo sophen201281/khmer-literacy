@@ -1,237 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mark & Draw — Type, Highlight, Sketch</title>
-<style>
-  :root{
-    --paper:#FAF6EE;
-    --card:#FFFEFB;
-    --ink:#2A2622;
-    --muted:#8a8272;
-    --line:#E7E0D1;
-    --accent:#C1652F;
-    --accent-soft:#F1E3D3;
-  }
-  *{ box-sizing:border-box; }
-  body{
-    margin:0;
-    min-height:100vh;
-    background:
-      radial-gradient(circle at 1px 1px, #00000009 1px, transparent 0) 0 0/22px 22px,
-      var(--paper);
-    font-family:'Courier New', ui-monospace, monospace;
-    color:var(--ink);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    padding:36px 16px 72px;
-  }
-  h1{
-    font-family:Georgia, 'Times New Roman', serif;
-    font-weight:600;
-    font-size:30px;
-    letter-spacing:-0.01em;
-    margin:0 0 4px;
-  }
-  .sub{
-    font-size:12px;
-    color:var(--muted);
-    margin-bottom:26px;
-    text-transform:uppercase;
-    letter-spacing:0.09em;
-    text-align:center;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mark & Draw — Type, Highlight, Sketch</title>
+  <style>
+    :root{
+      --paper:#FAF6EE;
+      --card:#FFFEFB;
+      --ink:#2A2622;
+      --muted:#8a8272;
+      --line:#E7E0D1;
+      --accent:#C1652F;
+      --accent-soft:#F1E3D3;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      background:
+        radial-gradient(circle at 1px 1px, #00000009 1px, transparent 0) 0 0/22px 22px,
+        var(--paper);
+      font-family:'Courier New', ui-monospace, monospace;
+      color:var(--ink);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:36px 16px 72px;
+    }
+    h1{
+      font-family:Georgia, 'Times New Roman', serif;
+      font-weight:600;
+      font-size:30px;
+      letter-spacing:-0.01em;
+      margin:0 0 4px;
+    }
+    .sub{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:26px;
+      text-transform:uppercase;
+      letter-spacing:0.09em;
+      text-align:center;
+    }
 
-  /* Toolbar — the "pen tray" */
-  .toolbar{
-    width:min(820px, 94vw);
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:14px;
-    padding:12px 14px;
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    gap:10px 16px;
-    box-shadow:0 1px 0 #fff inset, 0 8px 20px -14px #00000030;
-    margin-bottom:0;
-  }
-  .tool-group{
-    display:flex;
-    gap:6px;
-    background:var(--paper);
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:4px;
-  }
-  .tool-btn{
-    font-family:'Courier New', ui-monospace, monospace;
-    font-size:13px;
-    border:none;
-    background:transparent;
-    color:var(--ink);
-    padding:7px 12px;
-    border-radius:7px;
-    cursor:pointer;
-    transition:background .15s, color .15s;
-  }
-  .tool-btn:hover{ background:#00000008; }
-  .tool-btn.active{
-    background:var(--accent);
-    color:#fff;
-  }
-  .sub-bar{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    flex-wrap:wrap;
-  }
-  .bar-label{
-    font-size:11px;
-    color:var(--muted);
-    text-transform:uppercase;
-    letter-spacing:.06em;
-    margin-right:2px;
-  }
-  .hl-swatch, .pen-swatch{
-    width:22px; height:22px;
-    border-radius:50%;
-    border:2px solid #ffffffcc;
-    outline:1px solid var(--line);
-    cursor:pointer;
-    padding:0;
-  }
-  .hl-swatch.active, .pen-swatch.active{
-    outline:2px solid var(--accent);
-    outline-offset:1px;
-  }
-  input[type="range"]{ accent-color: var(--accent); width:90px; }
-  .text-btn{
-    font-family:'Courier New', ui-monospace, monospace;
-    font-size:11.5px;
-    background:none;
-    border:1px solid var(--line);
-    color:var(--ink);
-    padding:6px 10px;
-    border-radius:7px;
-    cursor:pointer;
-    letter-spacing:.02em;
-  }
-  .text-btn:hover{ background:var(--accent-soft); border-color:var(--accent); }
-  .text-btn.danger{ margin-left:auto; color:#8a2f1f; }
-  .text-btn.danger:hover{ background:#f6dfd8; border-color:#8a2f1f; }
+    /* Toolbar — the "pen tray" */
+    .toolbar{
+      width:min(820px, 94vw);
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 14px;
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:10px 16px;
+      box-shadow:0 1px 0 #fff inset, 0 8px 20px -14px #00000030;
+      margin-bottom:0;
+    }
+    .tool-group{
+      display:flex;
+      gap:6px;
+      background:var(--paper);
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:4px;
+    }
+    .tool-btn{
+      font-family:'Courier New', ui-monospace, monospace;
+      font-size:13px;
+      border:none;
+      background:transparent;
+      color:var(--ink);
+      padding:7px 12px;
+      border-radius:7px;
+      cursor:pointer;
+      transition:background .15s, color .15s;
+    }
+    .tool-btn:hover{ background:#00000008; }
+    .tool-btn.active{
+      background:var(--accent);
+      color:#fff;
+    }
+    .sub-bar{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .bar-label{
+      font-size:11px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      margin-right:2px;
+    }
+    .hl-swatch, .pen-swatch{
+      width:22px; height:22px;
+      border-radius:50%;
+      border:2px solid #ffffffcc;
+      outline:1px solid var(--line);
+      cursor:pointer;
+      padding:0;
+    }
+    .hl-swatch.active, .pen-swatch.active{
+      outline:2px solid var(--accent);
+      outline-offset:1px;
+    }
+    input[type="range"]{ accent-color: var(--accent); width:90px; }
+    .text-btn{
+      font-family:'Courier New', ui-monospace, monospace;
+      font-size:11.5px;
+      background:none;
+      border:1px solid var(--line);
+      color:var(--ink);
+      padding:6px 10px;
+      border-radius:7px;
+      cursor:pointer;
+      letter-spacing:.02em;
+    }
+    .text-btn:hover{ background:var(--accent-soft); border-color:var(--accent); }
+    .text-btn.danger{ margin-left:auto; color:#8a2f1f; }
+    .text-btn.danger:hover{ background:#f6dfd8; border-color:#8a2f1f; }
 
-  /* Stage — split into a typing/drawing half and an image half */
-  .stage{
-    position:relative;
-    width:min(1100px, 96vw);
-    margin-top:16px;
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:14px;
-    box-shadow:0 1px 0 #fff inset, 0 14px 34px -20px #00000040;
-    overflow:hidden;
-    display:flex;
-    align-items:stretch;
-  }
-  .stage-half{
-    position:relative;
-    flex:1 1 50%;
-    min-width:0;
-  }
-  .stage-text{
-    border-right:1px solid var(--line);
-  }
-  .text-layer{
-    position:relative;
-    z-index:1;
-    padding:34px 36px;
-    min-height:420px;
-    height:100%;
-    font-size:16px;
-    line-height:1.75;
-    outline:none;
-    white-space:pre-wrap;
-    word-wrap:break-word;
-  }
-  .text-layer:empty:before{
-    content: attr(data-placeholder);
-    color:#b8ae9c;
-  }
-  .letter{
-    position:absolute;
-    pointer-events:none;
-    user-select:none;
-    white-space:pre;
-  }
-  .text-layer.move-mode .letter{
-    pointer-events:auto;
-    cursor:grab;
-  }
-  .text-layer.move-mode .letter.dragging{
-    cursor:grabbing;
-    z-index:5;
-  }
-  .font-btn{
-    font-family:Georgia, serif;
-    font-weight:700;
-  }
-  .draw-canvas{
-    position:absolute;
-    top:0; left:0;
-    z-index:2;
-    pointer-events:none;
-  }
+    /* Stage — split into a typing/drawing half and an image half */
+    .stage{
+      position:relative;
+      width:min(1100px, 96vw);
+      margin-top:16px;
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow:0 1px 0 #fff inset, 0 14px 34px -20px #00000040;
+      overflow:hidden;
+      display:flex;
+      align-items:stretch;
+    }
+    .stage-half{
+      position:relative;
+      flex:1 1 50%;
+      min-width:0;
+    }
+    .stage-text{
+      border-right:1px solid var(--line);
+    }
+    .text-layer{
+      position:relative;
+      z-index:1;
+      padding:34px 36px;
+      min-height:420px;
+      height:100%;
+      font-size:16px;
+      line-height:1.75;
+      outline:none;
+      white-space:pre-wrap;
+      word-wrap:break-word;
+    }
+    .text-layer:empty:before{
+      content: attr(data-placeholder);
+      color:#b8ae9c;
+    }
+    .letter{
+      position:absolute;
+      pointer-events:none;
+      user-select:none;
+      white-space:pre;
+    }
+    .text-layer.move-mode .letter{
+      pointer-events:auto;
+      cursor:grab;
+    }
+    .text-layer.move-mode .letter.dragging{
+      cursor:grabbing;
+      z-index:5;
+    }
+    .font-btn{
+      font-family:Georgia, serif;
+      font-weight:700;
+    }
+    .draw-canvas{
+      position:absolute;
+      top:0; left:0;
+      z-index:2;
+      pointer-events:none;
+    }
 
-  .stage-image{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    min-height:420px;
-    background:var(--paper);
-    padding:20px;
-  }
-  .preview-image{
-    max-width:100%;
-    max-height:100%;
-    object-fit:contain;
-    border-radius:8px;
-    display:none;
-  }
-  .image-placeholder{
-    text-align:center;
-    padding:24px;
-    font-size:11.5px;
-    color:var(--muted);
-    line-height:1.6;
-    max-width:220px;
-  }
-  .image-placeholder code{
-    background:var(--accent-soft);
-    padding:1px 5px;
-    border-radius:4px;
-  }
+    .stage-image{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:420px;
+      background:var(--paper);
+      padding:20px;
+    }
+    .preview-image{
+      max-width:100%;
+      max-height:100%;
+      object-fit:contain;
+      border-radius:8px;
+      display:block;
+    }
+    .image-placeholder{
+      text-align:center;
+      padding:24px;
+      font-size:11.5px;
+      color:var(--muted);
+      line-height:1.6;
+      max-width:220px;
+    }
+    .image-placeholder code{
+      background:var(--accent-soft);
+      padding:1px 5px;
+      border-radius:4px;
+    }
 
-  .hint{
-    width:min(1100px, 96vw);
-    font-size:11.5px;
-    color:var(--muted);
-    margin-top:10px;
-    line-height:1.6;
-  }
+    .hint{
+      width:min(1100px, 96vw);
+      font-size:11.5px;
+      color:var(--muted);
+      margin-top:10px;
+      line-height:1.6;
+    }
 
-  @media (max-width:760px){
-    .stage{ flex-direction:column; }
-    .stage-text{ border-right:none; border-bottom:1px solid var(--line); }
-    .stage-image{ min-height:280px; }
-  }
-  @media (max-width:600px){
-    .text-btn.danger{ margin-left:0; }
-    .toolbar{ gap:8px 12px; }
-  }
-</style>
+    @media (max-width:760px){
+      .stage{ flex-direction:column; }
+      .stage-text{ border-right:none; border-bottom:1px solid var(--line); }
+      .stage-image{ min-height:280px; }
+    }
+    @media (max-width:600px){
+      .text-btn.danger{ margin-left:0; }
+      .toolbar{ gap:8px 12px; }
+    }
+  </style>
 </head>
 <body>
 
@@ -288,15 +288,16 @@
       <canvas id="drawCanvas" class="draw-canvas"></canvas>
     </div>
     <div class="stage-half stage-image">
-      <img id="previewImage" class="preview-image" alt="Reference image">
-      <div id="imagePlaceholder" class="image-placeholder">
+      <!-- Image a.jpg from the "image" folder is displayed here -->
+      <img id="previewImage" class="preview-image" src="image/a.jpg" alt="Reference image a.jpg">
+      <div id="imagePlaceholder" class="image-placeholder" style="display:none;">
         Save an image at <code>./image/a.jpg</code> next to this page and refresh — it'll appear here automatically.
       </div>
     </div>
   </div>
 
   <div class="hint">
-    Type mode: click into the left side and write normally. Highlight mode: click and drag over text to mark it — click a color first to change the marker. Draw mode: click and drag anywhere on the left side to sketch; typing is locked while drawing so your strokes land in the right place. A− / A+ resizes the text. Move mode breaks your text into individual letters you can drag anywhere — finish typing before switching to it, since it locks the layout in place. The right side shows an image automatically once you save one at <code>images/photo.jpg</code> next to this page.
+    Type mode: click into the left side and write normally. Highlight mode: click and drag over text to mark it — click a color first to change the marker. Draw mode: click and drag anywhere on the left side to sketch; typing is locked while drawing so your strokes land in the right place. A− / A+ resizes the text. Move mode breaks your text into individual letters you can drag anywhere — finish typing before switching to it, since it locks the layout in place. The right side shows an image automatically once you save one at <code>image/a.jpg</code> next to this page.
   </div>
 
 <script>
@@ -509,25 +510,34 @@
   }
   document.getElementById('resetPositionsBtn').addEventListener('click', resetLetterPositions);
 
-  // ---- Right-side image: auto-loaded from an "images" folder next to this file ----
-  const imagePlaceholder = document.getElementById('imagePlaceholder');
+  // ---- Right-side image: a.jpg is already loaded in the img tag ----
+  // The image placeholder is hidden by default because the img has a valid src.
+  // But if the image fails to load, we show the placeholder.
   const previewImage = document.getElementById('previewImage');
+  const imagePlaceholder = document.getElementById('imagePlaceholder');
 
-  function showImage(path){
-    previewImage.src = path;
+  previewImage.addEventListener('error', function() {
+    // If a.jpg fails to load, show the placeholder
+    this.style.display = 'none';
+    imagePlaceholder.style.display = 'block';
+  });
+
+  // If the image loads successfully, ensure the placeholder is hidden
+  previewImage.addEventListener('load', function() {
+    this.style.display = 'block';
+    imagePlaceholder.style.display = 'none';
+  });
+
+  // Initial check: if the image is already loaded (cached), the load event might not fire.
+  // So we check its natural width.
+  if (previewImage.complete && previewImage.naturalWidth > 0) {
     previewImage.style.display = 'block';
     imagePlaceholder.style.display = 'none';
+  } else if (previewImage.complete && previewImage.naturalWidth === 0) {
+    // Image failed to load or is invalid
+    previewImage.style.display = 'none';
+    imagePlaceholder.style.display = 'block';
   }
-
-  // Put your image at images/photo.jpg (same folder as this HTML file) and refresh —
-  // no upload needed, it appears here on its own.
-  (function tryAutoLoadFromImagesFolder(){
-    const IMAGE_PATH = 'images/photo.jpg';
-    const probe = new Image();
-    probe.onload = () => showImage(IMAGE_PATH);
-    probe.onerror = () => {}; // no file there yet — keep the placeholder showing
-    probe.src = IMAGE_PATH;
-  })();
 
   document.querySelectorAll('.tool-btn').forEach(btn => {
     btn.addEventListener('click', () => setMode(btn.dataset.mode));
@@ -609,4 +619,3 @@
 </script>
 </body>
 </html>
-
