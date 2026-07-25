@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="km">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>ប្រកបអាន</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     :root{
       --paper:#FAF6EE;
@@ -14,31 +17,35 @@
       --accent:#C1652F;
       --accent-soft:#F1E3D3;
     }
-    *{ box-sizing:border-box; }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html{ -webkit-text-size-adjust:100%; }
     body{
       margin:0;
       min-height:100vh;
+      min-height:100dvh;
       background:
         radial-gradient(circle at 1px 1px, #00000009 1px, transparent 0) 0 0/22px 22px,
         var(--paper);
-      font-family:'Courier New', ui-monospace, monospace;
+      font-family:'Battambang', 'Courier New', ui-monospace, monospace;
       color:var(--ink);
       display:flex;
       flex-direction:column;
       align-items:center;
-      padding:36px 16px 72px;
+      padding:24px clamp(10px, 3vw, 36px) 60px;
+      overflow-x:hidden;
     }
     h1{
-      font-family:Georgia, 'Times New Roman', serif;
-      font-weight:600;
-      font-size:30px;
+      font-family:'Battambang', Georgia, 'Times New Roman', serif;
+      font-weight:700;
+      font-size:clamp(22px, 5vw, 30px);
       letter-spacing:-0.01em;
       margin:0 0 4px;
+      text-align:center;
     }
     .sub{
-      font-size:12px;
+      font-size:clamp(10.5px, 2.6vw, 12px);
       color:var(--muted);
-      margin-bottom:26px;
+      margin-bottom:20px;
       text-transform:uppercase;
       letter-spacing:0.09em;
       text-align:center;
@@ -46,15 +53,15 @@
 
     /* Toolbar — the "pen tray" */
     .toolbar{
-      width:min(820px, 94vw);
+      width:min(820px, 96vw);
       background:var(--card);
       border:1px solid var(--line);
       border-radius:14px;
-      padding:12px 14px;
+      padding:10px 12px;
       display:flex;
       flex-wrap:wrap;
       align-items:center;
-      gap:10px 16px;
+      gap:8px 12px;
       box-shadow:0 1px 0 #fff inset, 0 8px 20px -14px #00000030;
       margin-bottom:0;
     }
@@ -65,17 +72,19 @@
       border:1px solid var(--line);
       border-radius:10px;
       padding:4px;
+      flex-wrap:wrap;
     }
     .tool-btn{
-      font-family:'Courier New', ui-monospace, monospace;
-      font-size:13px;
+      font-family:'Battambang', 'Courier New', ui-monospace, monospace;
+      font-size:clamp(12px, 3vw, 13px);
       border:none;
       background:transparent;
       color:var(--ink);
-      padding:7px 12px;
+      padding:7px 10px;
       border-radius:7px;
       cursor:pointer;
       transition:background .15s, color .15s;
+      white-space:nowrap;
     }
     .tool-btn:hover{ background:#00000008; }
     .tool-btn.active{
@@ -87,6 +96,7 @@
       align-items:center;
       gap:8px;
       flex-wrap:wrap;
+      width:100%;
     }
     .bar-label{
       font-size:11px;
@@ -94,9 +104,11 @@
       text-transform:uppercase;
       letter-spacing:.06em;
       margin-right:2px;
+      white-space:nowrap;
     }
     .hl-swatch, .pen-swatch{
       width:22px; height:22px;
+      min-width:22px;
       border-radius:50%;
       border:2px solid #ffffffcc;
       outline:1px solid var(--line);
@@ -107,9 +119,9 @@
       outline:2px solid var(--accent);
       outline-offset:1px;
     }
-    input[type="range"]{ accent-color: var(--accent); width:90px; }
+    input[type="range"]{ accent-color: var(--accent); width:90px; max-width:30vw; }
     .text-btn{
-      font-family:'Courier New', ui-monospace, monospace;
+      font-family:'Battambang', 'Courier New', ui-monospace, monospace;
       font-size:11.5px;
       background:none;
       border:1px solid var(--line);
@@ -118,6 +130,7 @@
       border-radius:7px;
       cursor:pointer;
       letter-spacing:.02em;
+      white-space:nowrap;
     }
     .text-btn:hover{ background:var(--accent-soft); border-color:var(--accent); }
     .text-btn.danger{ margin-left:auto; color:#8a2f1f; }
@@ -147,14 +160,16 @@
     .text-layer{
       position:relative;
       z-index:1;
-      padding:34px 36px;
-      min-height:420px;
+      padding:clamp(18px, 4vw, 34px) clamp(16px, 4vw, 36px);
+      min-height:320px;
       height:100%;
+      font-family:'Battambang', 'Courier New', ui-monospace, monospace;
       font-size:16px;
-      line-height:1.75;
+      line-height:1.8;
       outline:none;
       white-space:pre-wrap;
       word-wrap:break-word;
+      overflow-wrap:break-word;
     }
     .text-layer:empty:before{
       content: attr(data-placeholder);
@@ -165,10 +180,12 @@
       pointer-events:none;
       user-select:none;
       white-space:pre;
+      font-family:'Battambang', 'Courier New', ui-monospace, monospace;
     }
     .text-layer.move-mode .letter{
       pointer-events:auto;
       cursor:grab;
+      touch-action:none;
     }
     .text-layer.move-mode .letter.dragging{
       cursor:grabbing;
@@ -182,16 +199,16 @@
       position:absolute;
       top:0; left:0;
       z-index:2;
-      pointer-events:none;
+      touch-action:none;
     }
 
     .stage-image{
       display:flex;
       align-items:center;
       justify-content:center;
-      min-height:420px;
+      min-height:320px;
       background:var(--paper);
-      padding:20px;
+      padding:16px;
     }
     .preview-image{
       max-width:100%;
@@ -222,14 +239,29 @@
       line-height:1.6;
     }
 
+    /* Tablet */
     @media (max-width:760px){
       .stage{ flex-direction:column; }
       .stage-text{ border-right:none; border-bottom:1px solid var(--line); }
-      .stage-image{ min-height:280px; }
+      .stage-image{ min-height:240px; }
+      .text-layer{ min-height:260px; }
     }
+
+    /* Phone */
     @media (max-width:600px){
-      .text-btn.danger{ margin-left:0; }
-      .toolbar{ gap:8px 12px; }
+      body{ padding:16px 8px 48px; }
+      .toolbar{ padding:8px 10px; gap:6px 10px; }
+      .tool-group{ flex:1 1 auto; justify-content:center; }
+      .text-btn.danger{ margin-left:0; flex:1 1 100%; text-align:center; }
+      input[type="range"]{ width:70px; }
+    }
+
+    /* Small phone */
+    @media (max-width:400px){
+      .tool-btn{ padding:6px 8px; }
+      .bar-label{ display:none; }
+      .hl-swatch, .pen-swatch{ width:20px; height:20px; min-width:20px; }
+      .text-layer{ font-size:15px; }
     }
   </style>
 </head>
@@ -313,7 +345,7 @@
 
   function sizeCanvasToLayer(){
     const w = Math.max(textLayer.offsetWidth, textLayer.scrollWidth);
-    const h = Math.max(textLayer.offsetHeight, textLayer.scrollHeight, 420);
+    const h = Math.max(textLayer.offsetHeight, textLayer.scrollHeight, 320);
     const dpr = window.devicePixelRatio || 1;
     canvas.style.width = w + 'px';
     canvas.style.height = h + 'px';
@@ -507,30 +539,23 @@
   document.getElementById('resetPositionsBtn').addEventListener('click', resetLetterPositions);
 
   // ---- Right-side image: a.jpg is already loaded in the img tag ----
-  // The image placeholder is hidden by default because the img has a valid src.
-  // But if the image fails to load, we show the placeholder.
   const previewImage = document.getElementById('previewImage');
   const imagePlaceholder = document.getElementById('imagePlaceholder');
 
   previewImage.addEventListener('error', function() {
-    // If a.jpg fails to load, show the placeholder
     this.style.display = 'none';
     imagePlaceholder.style.display = 'block';
   });
 
-  // If the image loads successfully, ensure the placeholder is hidden
   previewImage.addEventListener('load', function() {
     this.style.display = 'block';
     imagePlaceholder.style.display = 'none';
   });
 
-  // Initial check: if the image is already loaded (cached), the load event might not fire.
-  // So we check its natural width.
   if (previewImage.complete && previewImage.naturalWidth > 0) {
     previewImage.style.display = 'block';
     imagePlaceholder.style.display = 'none';
   } else if (previewImage.complete && previewImage.naturalWidth === 0) {
-    // Image failed to load or is invalid
     previewImage.style.display = 'none';
     imagePlaceholder.style.display = 'block';
   }
@@ -539,7 +564,6 @@
     btn.addEventListener('click', () => setMode(btn.dataset.mode));
   });
 
-  // Apply highlight when a selection is released in highlight mode
   document.addEventListener('mouseup', () => {
     if(mode !== 'highlight') return;
     const sel = window.getSelection();
@@ -608,6 +632,7 @@
   const ro = new ResizeObserver(() => sizeCanvasToLayer());
   ro.observe(textLayer);
   window.addEventListener('resize', sizeCanvasToLayer);
+  window.addEventListener('orientationchange', () => setTimeout(sizeCanvasToLayer, 200));
   window.addEventListener('load', () => {
     sizeCanvasToLayer();
     setMode('type');
