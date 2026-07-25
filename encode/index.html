@@ -133,6 +133,11 @@
       white-space:nowrap;
     }
     .text-btn:hover{ background:var(--accent-soft); border-color:var(--accent); }
+    .text-btn.active{
+      background:var(--accent);
+      color:#fff;
+      border-color:var(--accent);
+    }
     .text-btn.danger{ margin-left:auto; color:#8a2f1f; }
     .text-btn.danger:hover{ background:#f6dfd8; border-color:#8a2f1f; }
 
@@ -218,12 +223,14 @@
     }
 
     .stage-image{
+      position:relative;
       display:flex;
       align-items:center;
       justify-content:center;
       min-height:320px;
       background:var(--paper);
       padding:16px;
+      overflow:hidden;
     }
     .preview-image{
       max-width:100%;
@@ -315,6 +322,7 @@
       <button class="pen-swatch" data-color="#2E6E9E" style="background:#2E6E9E" title="Blue"></button>
       <button class="pen-swatch" data-color="#3E8E5A" style="background:#3E8E5A" title="Green"></button>
       <button class="pen-swatch" data-color="#B3243D" style="background:#B3243D" title="Red"></button>
+      <button id="eraserBtn" class="text-btn" title="Erase strokes">🧹 Eraser</button>
       <span class="bar-label">size</span>
       <input type="range" id="penSize" min="1" max="90" value="45">
       <button id="undoBtn" class="text-btn">undo stroke</button>
@@ -340,6 +348,7 @@
       <div id="imagePlaceholder" class="image-placeholder" style="display:none;">
         Save an image at <code>./image/a.jpg</code> next to this page and refresh — it'll appear here automatically.
       </div>
+      <canvas id="drawCanvasImage" class="draw-canvas"></canvas>
     </div>
   </div>
 
@@ -348,88 +357,125 @@
   const textLayer = document.getElementById('textLayer');
   const canvas = document.getElementById('drawCanvas');
   const ctx = canvas.getContext('2d');
+  const imageCanvas = document.getElementById('drawCanvasImage');
+  const imageCtx = imageCanvas.getContext('2d');
+  const stageImage = document.querySelector('.stage-image');
 
   let mode = 'type'; // 'type' | 'highlight' | 'draw' | 'move'
   let highlightColor = '#FFE066';
   let drawColor = '#2A2622';
   let drawSize = 4;
-  let strokes = [];
-  let currentStroke = null;
-  let drawing = false;
+  let isEraser = false;
   let fontSize = 16;
   let isShattered = false;
 
-  function sizeCanvasToLayer(){
-    const w = Math.max(textLayer.offsetWidth, textLayer.scrollWidth);
-    const h = Math.max(textLayer.offsetHeight, textLayer.scrollHeight, 320);
-    const dpr = window.devicePixelRatio || 1;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    redrawStrokes();
+  // Each drawable surface tracks its own canvas/ctx/strokes independently,
+  // but shares the same color/size settings and draw mode.
+  function makeSurface(canvasEl, contextEl, sizeFn){
+    return {
+      canvas: canvasEl,
+      ctx: contextEl,
+      strokes: [],
+      currentStroke: null,
+      drawing: false,
+      sizeFn
+    };
   }
 
-  function redrawStrokes(){
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const textSurface = makeSurface(canvas, ctx, () => ({
+    w: Math.max(textLayer.offsetWidth, textLayer.scrollWidth),
+    h: Math.max(textLayer.offsetHeight, textLayer.scrollHeight, 320)
+  }));
+  const imageSurface = makeSurface(imageCanvas, imageCtx, () => ({
+    w: stageImage.clientWidth,
+    h: stageImage.clientHeight
+  }));
+  const surfaces = [textSurface, imageSurface];
+  let lastUsedSurface = textSurface;
+
+  function sizeSurface(surface){
+    const { w, h } = surface.sizeFn();
+    const dpr = window.devicePixelRatio || 1;
+    surface.canvas.style.width = w + 'px';
+    surface.canvas.style.height = h + 'px';
+    surface.canvas.width = Math.round(w * dpr);
+    surface.canvas.height = Math.round(h * dpr);
+    surface.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    redrawStrokes(surface);
+  }
+  function sizeCanvasToLayer(){
+    surfaces.forEach(sizeSurface);
+  }
+
+  function redrawStrokes(surface){
+    const { ctx: c, strokes, canvas: cv } = surface;
+    c.clearRect(0, 0, cv.width, cv.height);
     strokes.forEach(s => {
       if(s.points.length < 1) return;
-      ctx.strokeStyle = s.color;
-      ctx.lineWidth = s.size;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      ctx.moveTo(s.points[0].x, s.points[0].y);
+      c.globalCompositeOperation = s.erase ? 'destination-out' : 'source-over';
+      c.strokeStyle = s.color;
+      c.lineWidth = s.size;
+      c.lineCap = 'round';
+      c.lineJoin = 'round';
+      c.beginPath();
+      c.moveTo(s.points[0].x, s.points[0].y);
       for(let i = 1; i < s.points.length; i++){
-        ctx.lineTo(s.points[i].x, s.points[i].y);
+        c.lineTo(s.points[i].x, s.points[i].y);
       }
-      ctx.stroke();
+      c.stroke();
     });
+    c.globalCompositeOperation = 'source-over';
   }
 
-  function getPos(e){
-    const rect = canvas.getBoundingClientRect();
+  function getPos(canvasEl, e){
+    const rect = canvasEl.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     return { x: clientX - rect.left, y: clientY - rect.top };
   }
 
-  function startDraw(e){
+  function startDraw(surface, e){
     if(mode !== 'draw') return;
-    drawing = true;
-    const p = getPos(e);
-    currentStroke = { color: drawColor, size: drawSize, points: [p] };
-    strokes.push(currentStroke);
+    surface.drawing = true;
+    lastUsedSurface = surface;
+    const p = getPos(surface.canvas, e);
+    surface.currentStroke = { color: drawColor, size: isEraser ? drawSize * 2 : drawSize, erase: isEraser, points: [p] };
+    surface.strokes.push(surface.currentStroke);
     e.preventDefault();
   }
-  function moveDraw(e){
-    if(!drawing || !currentStroke) return;
-    const p = getPos(e);
-    const pts = currentStroke.points;
+  function moveDraw(surface, e){
+    if(!surface.drawing || !surface.currentStroke) return;
+    const p = getPos(surface.canvas, e);
+    const pts = surface.currentStroke.points;
     const last = pts[pts.length - 1];
     pts.push(p);
-    ctx.strokeStyle = currentStroke.color;
-    ctx.lineWidth = currentStroke.size;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(last.x, last.y);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
+    const c = surface.ctx;
+    c.globalCompositeOperation = surface.currentStroke.erase ? 'destination-out' : 'source-over';
+    c.strokeStyle = surface.currentStroke.color;
+    c.lineWidth = surface.currentStroke.size;
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+    c.beginPath();
+    c.moveTo(last.x, last.y);
+    c.lineTo(p.x, p.y);
+    c.stroke();
+    c.globalCompositeOperation = 'source-over';
     e.preventDefault();
   }
-  function endDraw(){
-    drawing = false;
-    currentStroke = null;
+  function endDraw(surface){
+    surface.drawing = false;
+    surface.currentStroke = null;
   }
 
-  canvas.addEventListener('mousedown', startDraw);
-  canvas.addEventListener('mousemove', moveDraw);
-  window.addEventListener('mouseup', endDraw);
-  canvas.addEventListener('touchstart', startDraw, { passive:false });
-  canvas.addEventListener('touchmove', moveDraw, { passive:false });
-  canvas.addEventListener('touchend', endDraw);
+  surfaces.forEach(surface => {
+    const cv = surface.canvas;
+    cv.addEventListener('mousedown', e => startDraw(surface, e));
+    cv.addEventListener('mousemove', e => moveDraw(surface, e));
+    window.addEventListener('mouseup', () => endDraw(surface));
+    cv.addEventListener('touchstart', e => startDraw(surface, e), { passive:false });
+    cv.addEventListener('touchmove', e => moveDraw(surface, e), { passive:false });
+    cv.addEventListener('touchend', () => endDraw(surface));
+  });
 
   function setMode(next){
     mode = next;
@@ -442,13 +488,17 @@
     if(mode === 'draw'){
       canvas.style.pointerEvents = 'auto';
       canvas.style.cursor = 'crosshair';
+      imageCanvas.style.pointerEvents = 'auto';
+      imageCanvas.style.cursor = 'crosshair';
       textLayer.setAttribute('contenteditable', 'false');
     } else if(mode === 'move'){
       canvas.style.pointerEvents = 'none';
+      imageCanvas.style.pointerEvents = 'none';
       textLayer.setAttribute('contenteditable', 'false');
       shatterText();
     } else {
       canvas.style.pointerEvents = 'none';
+      imageCanvas.style.pointerEvents = 'none';
       textLayer.setAttribute('contenteditable', 'true');
       if(mode === 'type') textLayer.focus();
     }
@@ -566,6 +616,7 @@
   previewImage.addEventListener('load', function() {
     this.style.display = 'block';
     imagePlaceholder.style.display = 'none';
+    sizeSurface(imageSurface);
   });
 
   if (previewImage.complete && previewImage.naturalWidth > 0) {
@@ -608,9 +659,17 @@
   document.querySelectorAll('.pen-swatch').forEach(sw => {
     sw.addEventListener('click', () => {
       drawColor = sw.dataset.color;
+      isEraser = false;
+      document.getElementById('eraserBtn').classList.remove('active');
       document.querySelectorAll('.pen-swatch').forEach(s => s.classList.remove('active'));
       sw.classList.add('active');
     });
+  });
+
+  document.getElementById('eraserBtn').addEventListener('click', function(){
+    isEraser = !isEraser;
+    this.classList.toggle('active', isEraser);
+    document.querySelectorAll('.pen-swatch').forEach(s => s.classList.toggle('active', !isEraser && s.dataset.color === drawColor));
   });
 
   document.getElementById('penSize').addEventListener('input', e => {
@@ -618,13 +677,16 @@
   });
 
   document.getElementById('clearDrawBtn').addEventListener('click', () => {
-    strokes = [];
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    surfaces.forEach(surface => {
+      surface.strokes = [];
+      surface.ctx.clearRect(0, 0, surface.canvas.width, surface.canvas.height);
+    });
   });
 
   document.getElementById('undoBtn').addEventListener('click', () => {
-    strokes.pop();
-    redrawStrokes();
+    // Undo the most recent stroke drawn, on whichever surface it was drawn on.
+    lastUsedSurface.strokes.pop();
+    redrawStrokes(lastUsedSurface);
   });
 
   document.getElementById('clearHighlightBtn').addEventListener('click', () => {
@@ -647,6 +709,7 @@
 
   const ro = new ResizeObserver(() => sizeCanvasToLayer());
   ro.observe(textLayer);
+  ro.observe(stageImage);
   window.addEventListener('resize', sizeCanvasToLayer);
   window.addEventListener('orientationchange', () => setTimeout(sizeCanvasToLayer, 200));
   window.addEventListener('load', () => {
