@@ -51,8 +51,13 @@
       text-align:center;
     }
 
-    /* Toolbar — the "pen tray" */
+    /* Toolbar — the "pen tray" — pinned to the bottom of the viewport */
     .toolbar{
+      position:fixed;
+      bottom:14px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:100;
       width:min(820px, 96vw);
       background:var(--card);
       border:1px solid var(--line);
@@ -62,7 +67,7 @@
       flex-wrap:wrap;
       align-items:center;
       gap:8px 12px;
-      box-shadow:0 1px 0 #fff inset, 0 8px 20px -14px #00000030;
+      box-shadow:0 1px 0 #fff inset, 0 10px 30px -10px #00000045;
       margin-bottom:0;
     }
     .tool-group{
@@ -107,7 +112,7 @@
       margin-right:2px;
       white-space:nowrap;
     }
-    .hl-swatch, .pen-swatch{
+    .pen-swatch{
       width:22px; height:22px;
       min-width:22px;
       border-radius:50%;
@@ -116,7 +121,7 @@
       cursor:pointer;
       padding:0;
     }
-    .hl-swatch.active, .pen-swatch.active{
+    .pen-swatch.active{
       outline:2px solid var(--accent);
       outline-offset:1px;
     }
@@ -296,7 +301,7 @@
     /* Phone */
     @media (max-width:600px){
       body{ padding:16px 8px 48px; }
-      .toolbar{ padding:8px 10px; gap:6px 10px; }
+      .toolbar{ padding:8px 10px; gap:6px 10px; bottom:8px; }
       .tool-group{ flex:1 1 auto; justify-content:center; }
       .text-btn.danger{ margin-left:0; flex:1 1 100%; text-align:center; }
       input[type="range"]{ width:70px; }
@@ -306,7 +311,7 @@
     @media (max-width:400px){
       .tool-btn{ padding:6px 8px; }
       .bar-label{ display:none; }
-      .hl-swatch, .pen-swatch{ width:20px; height:20px; min-width:20px; }
+      .pen-swatch{ width:20px; height:20px; min-width:20px; }
       .text-layer{ font-size:15px; }
     }
   </style>
@@ -318,7 +323,6 @@
   <div class="toolbar">
     <div class="tool-group" role="tablist" aria-label="Mode">
       <button class="tool-btn active" data-mode="type">✎ Type</button>
-      <button class="tool-btn" data-mode="highlight">▤ Highlight</button>
       <button class="tool-btn" data-mode="move">✥ Move</button>
       <button onclick="window.location.href='../index.html'" class="homeBtn">🏡 Home</button>
     </div>
@@ -339,16 +343,6 @@
         <option value="2.svg">សូរស្រៈប្រើជាមួយពួក អ</option>
         <option value="3.svg">សូរស្រៈប្រើជាមួយពួក អ៊</option>
       </select>
-    </div>
-
-    <div id="highlightBar" class="sub-bar" style="display:none;">
-      <span class="bar-label">color</span>
-      <button class="hl-swatch active" data-color="#FFE066" style="background:#FFE066" title="Yellow"></button>
-      <button class="hl-swatch" data-color="#B9F6CA" style="background:#B9F6CA" title="Green"></button>
-      <button class="hl-swatch" data-color="#FFB3C6" style="background:#FFB3C6" title="Pink"></button>
-      <button class="hl-swatch" data-color="#A0E7FF" style="background:#A0E7FF" title="Blue"></button>
-      <button class="hl-swatch" data-color="#D9C4FF" style="background:#D9C4FF" title="Purple"></button>
-      <button id="clearHighlightBtn" class="text-btn">clear highlights</button>
     </div>
 
     <div id="drawBar" class="sub-bar" style="display:none;">
@@ -396,10 +390,10 @@
   const imageCanvas = document.getElementById('drawCanvasImage');
   const imageCtx = imageCanvas.getContext('2d');
   const stageImage = document.querySelector('.stage-image');
+  const toolbarEl = document.querySelector('.toolbar');
 
-  let mode = 'type'; // 'type' | 'highlight' | 'move'
+  let mode = 'type'; // 'type' | 'move'
   let drawEnabled = false; // drawing is an independent overlay, not an exclusive mode
-  let highlightColor = '#FFE066';
   let drawColor = '#2A2622';
   let drawSize = 4;
   let isEraser = false;
@@ -533,7 +527,6 @@
   function setMode(next){
     mode = next;
     document.querySelectorAll('.tool-btn[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
-    document.getElementById('highlightBar').style.display = mode === 'highlight' ? 'flex' : 'none';
     document.getElementById('moveBar').style.display = mode === 'move' ? 'flex' : 'none';
     textLayer.classList.toggle('move-mode', mode === 'move');
 
@@ -679,31 +672,6 @@
     btn.addEventListener('click', () => setMode(btn.dataset.mode));
   });
 
-  document.addEventListener('mouseup', () => {
-    if(mode !== 'highlight') return;
-    const sel = window.getSelection();
-    if(!sel || sel.isCollapsed) return;
-    if(!textLayer.contains(sel.anchorNode)) return;
-    applyHighlight(highlightColor);
-  });
-
-  function applyHighlight(color){
-    try{ document.execCommand('styleWithCSS', false, true); }catch(e){}
-    try{
-      document.execCommand('hiliteColor', false, color);
-    }catch(e){
-      try{ document.execCommand('backColor', false, color); }catch(e2){}
-    }
-  }
-
-  document.querySelectorAll('.hl-swatch').forEach(sw => {
-    sw.addEventListener('click', () => {
-      highlightColor = sw.dataset.color;
-      document.querySelectorAll('.hl-swatch').forEach(s => s.classList.remove('active'));
-      sw.classList.add('active');
-    });
-  });
-
   document.querySelectorAll('.pen-swatch').forEach(sw => {
     sw.addEventListener('click', () => {
       drawColor = sw.dataset.color;
@@ -737,16 +705,6 @@
     redrawStrokes(lastUsedSurface);
   });
 
-  document.getElementById('clearHighlightBtn').addEventListener('click', () => {
-    const range = document.createRange();
-    range.selectNodeContents(textLayer);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-    applyHighlight('transparent');
-    sel.removeAllRanges();
-  });
-
   document.getElementById('clearTextBtn').addEventListener('click', () => {
     if(confirm('Clear all typed text? This won\'t affect your drawing.')){
       textLayer.innerHTML = '';
@@ -754,6 +712,13 @@
       if(mode === 'type') textLayer.focus();
     }
   });
+
+  // ---- Keep body padding clear of the fixed bottom toolbar, even as its height changes ----
+  function adjustBodyPadding(){
+    document.body.style.paddingBottom = (toolbarEl.offsetHeight + 28) + 'px';
+  }
+  const roToolbar = new ResizeObserver(adjustBodyPadding);
+  roToolbar.observe(toolbarEl);
 
   const ro = new ResizeObserver(() => sizeCanvasToLayer());
   ro.observe(textLayer);
@@ -764,6 +729,7 @@
     sizeCanvasToLayer();
     setMode('type');
     updateCanvasInteractivity();
+    adjustBodyPadding();
   });
 </script>
 </body>
