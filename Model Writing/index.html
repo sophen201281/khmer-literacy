@@ -144,8 +144,6 @@
       color:#fff;
       border-color:var(--accent);
     }
-    .text-btn.danger{ margin-left:auto; color:#8a2f1f; }
-    .text-btn.danger:hover{ background:#f6dfd8; border-color:#8a2f1f; }
 
     .img-select{
       font-family:'Battambang', 'Courier New', ui-monospace, monospace;
@@ -175,7 +173,7 @@
     .homeBtn:hover{ background:#00000008; }
     .homeBtn:active{ transform:scale(0.96); }
 
-    /* Stage — split into a typing/drawing half and an image half */
+    /* Stage — split into a drawing half and an image half */
     .stage{
       position:relative;
       width:min(1100px, 96vw);
@@ -195,6 +193,13 @@
     }
     .stage-text{
       border-right:1px solid var(--line);
+    }
+    .text-layer{
+      position:relative;
+      z-index:1;
+      padding:clamp(18px, 4vw, 34px) clamp(16px, 4vw, 36px);
+      min-height:320px;
+      height:100%;
     }
     .draw-canvas{
       position:absolute;
@@ -257,6 +262,7 @@
       .stage{ flex-direction:column; }
       .stage-text{ border-right:none; border-bottom:1px solid var(--line); }
       .stage-image{ min-height:240px; }
+      .text-layer{ min-height:260px; }
     }
 
     /* Phone */
@@ -264,7 +270,6 @@
       body{ padding:16px 8px 48px; }
       .toolbar{ padding:8px 10px; gap:6px 10px; bottom:8px; }
       .tool-group{ flex:1 1 auto; justify-content:center; }
-      .text-btn.danger{ margin-left:0; flex:1 1 100%; text-align:center; }
       input[type="range"]{ width:70px; }
     }
 
@@ -281,7 +286,7 @@
   
 
   <div class="toolbar">
-    <div class="tool-group" role="tablist" aria-label="Mode">
+    <div class="tool-group">
       <button onclick="window.location.href='../index.html'" class="homeBtn">🏡 Home</button>
     </div>
 
@@ -322,12 +327,11 @@
       <button id="eraserBtn" class="text-btn" title="Erase strokes">លុប</button>
       <button id="clearDrawBtn" class="text-btn">សម្អាត</button>
     </div>
-
-
   </div>
 
   <div id="stage" class="stage">
     <div class="stage-half stage-text">
+      <div id="textLayer" class="text-layer"></div>
       <canvas id="drawCanvas" class="draw-canvas"></canvas>
     </div>
     <div class="stage-half stage-image">
@@ -342,21 +346,21 @@
 
   
 <script>
+  const textLayer = document.getElementById('textLayer');
   const canvas = document.getElementById('drawCanvas');
   const ctx = canvas.getContext('2d');
   const imageCanvas = document.getElementById('drawCanvasImage');
   const imageCtx = imageCanvas.getContext('2d');
-  const stageText = document.querySelector('.stage-text');
   const stageImage = document.querySelector('.stage-image');
   const toolbarEl = document.querySelector('.toolbar');
 
-  let drawEnabled = false; // drawing is an independent overlay, not an exclusive mode
+  let drawEnabled = false; // drawing is an independent overlay
   let drawColor = '#2A2622';
   let drawSize = 45;
   let isEraser = false;
 
   // Each drawable surface tracks its own canvas/ctx/strokes independently,
-  // but shares the same color/size settings and draw mode.
+  // but shares the same color/size settings.
   function makeSurface(canvasEl, contextEl, sizeFn){
     return {
       canvas: canvasEl,
@@ -369,8 +373,8 @@
   }
 
   const textSurface = makeSurface(canvas, ctx, () => ({
-    w: stageText.clientWidth,
-    h: stageText.clientHeight
+    w: Math.max(textLayer.offsetWidth, textLayer.scrollWidth),
+    h: Math.max(textLayer.offsetHeight, textLayer.scrollHeight, 320)
   }));
   const imageSurface = makeSurface(imageCanvas, imageCtx, () => ({
     w: stageImage.clientWidth,
@@ -479,7 +483,7 @@
 
   document.getElementById('drawToggleBtn').addEventListener('click', () => setDrawEnabled(!drawEnabled));
 
-  // ---- Right-side image: defaults to image/1.svg, replaceable via camera/upload ----
+  // ---- Right-side image: defaults to image/1.svg ----
   const previewImage = document.getElementById('previewImage');
   const imagePlaceholder = document.getElementById('imagePlaceholder');
 
@@ -563,7 +567,7 @@
   roToolbar.observe(toolbarEl);
 
   const ro = new ResizeObserver(() => sizeCanvasToLayer());
-  ro.observe(stageText);
+  ro.observe(textLayer);
   ro.observe(stageImage);
   window.addEventListener('resize', sizeCanvasToLayer);
   window.addEventListener('orientationchange', () => setTimeout(sizeCanvasToLayer, 200));
