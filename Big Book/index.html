@@ -572,14 +572,14 @@
 
     <!-- The Book -->
     <div class="flipbook-wrapper" id="wrapper">
-        <div class="flipbook" id="flipbook">
+        <div class="flipbook cover-only" id="flipbook">
 
             <!-- SPREAD 0: FRONT COVER + empty -->
             <div class="page page-left cover" data-page="0">
                 <h1 id="coverTitle">📖 ខ្ញុំអាចមើលឃើញ</h1>
                 <div class="sub" id="coverSub">✦ អូសដើម្បីស្វែងយល់ ✦</div>
             </div>
-            <div class="page page-right empty-page" data-page="1"><span style="opacity:0.2;">·</span></div>
+            <div class="page page-right empty-page" data-page="1" style="display: none;"><span style="opacity:0.2;">·</span></div>
 
             <!-- SPREAD 1: empty + title -->
             <div class="page page-left empty-page" data-page="2"><span style="opacity:0.3;">⋆</span></div>
@@ -1041,7 +1041,6 @@
             // ============================================================
             //  INIT - Start with cover page only
             // ============================================================
-            // Ensure we start at spread 0 (cover)
             currentSpread = 0;
             updateFlip();
         })();
