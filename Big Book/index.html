@@ -785,6 +785,7 @@
             const flipbookEl = document.getElementById('flipbook');
 
             // Pages: 0=cover, 1-2=title spread (empty+title), 3-4=flower, 5-6=dog, 7-8=cat, 9-10=car, 11-12=tree, 13-14=sun, 15=back
+            // Spread n (n=1..7) contains pages (2n-1, 2n): spread1={1,2}, spread2={3,4}, spread3={5,6}, spread4={7,8}, spread5={9,10}, spread6={11,12}, spread7={13,14}
             const TOTAL_PAGES = 16;
             const SPREADS = 9; // 0:cover, 1:title, 2:flower, 3:dog, 4:cat, 5:car, 6:tree, 7:sun, 8:back
             let currentSpread = 0;
@@ -918,13 +919,26 @@
             // ============================================================
             const FLIP_MS = 700;
 
+            // Correct page-to-spread mapping:
+            //   page 0            -> spread 0 (front cover)
+            //   pages 1,2         -> spread 1 (empty left / title right)
+            //   pages 3,4         -> spread 2 (flower)
+            //   pages 5,6         -> spread 3 (dog)
+            //   pages 7,8         -> spread 4 (cat)
+            //   pages 9,10        -> spread 5 (car)
+            //   pages 11,12       -> spread 6 (tree)
+            //   pages 13,14       -> spread 7 (sun)
+            //   page 15           -> spread 8 (back cover)
+            function pageToSpread(pageNum) {
+                if (pageNum === 0) return 0;
+                if (pageNum === 15) return 8;
+                return Math.ceil(pageNum / 2);
+            }
+
             function updateFlip() {
                 pages.forEach(page => {
                     const pageNum = parseInt(page.getAttribute('data-page'), 10);
-                    let pageSpread;
-                    if (pageNum === 0) pageSpread = 0;
-                    else if (pageNum === 15) pageSpread = 8;
-                    else pageSpread = Math.floor(pageNum / 2) + 1;
+                    const pageSpread = pageToSpread(pageNum);
 
                     // Special styling for cover and back cover (full width)
                     if (pageNum === 0 || pageNum === 15) {
@@ -994,6 +1008,10 @@
                 }
             }
 
+            // Determine which two page elements animate for a given transition.
+            // Uses the same spread definition as pageToSpread() above, so the
+            // page that "leaves" and the page that "enters" are always the
+            // correct physical pages for that spread.
             function getFlipPages(oldSpread, newSpread, dir) {
                 if (dir === 1) {
                     if (oldSpread === 0) {
@@ -1008,8 +1026,8 @@
                         };
                     } else {
                         return {
-                            leaving: document.querySelector(`.page[data-page="${(oldSpread - 1) * 2}"]`),
-                            entering: document.querySelector(`.page[data-page="${(newSpread - 1) * 2 + 1}"]`)
+                            leaving: document.querySelector(`.page[data-page="${oldSpread * 2}"]`),
+                            entering: document.querySelector(`.page[data-page="${newSpread * 2 - 1}"]`)
                         };
                     }
                 } else {
@@ -1025,8 +1043,8 @@
                         };
                     } else {
                         return {
-                            leaving: document.querySelector(`.page[data-page="${(oldSpread - 1) * 2 + 1}"]`),
-                            entering: document.querySelector(`.page[data-page="${(newSpread - 1) * 2}"]`)
+                            leaving: document.querySelector(`.page[data-page="${oldSpread * 2 - 1}"]`),
+                            entering: document.querySelector(`.page[data-page="${newSpread * 2}"]`)
                         };
                     }
                 }
