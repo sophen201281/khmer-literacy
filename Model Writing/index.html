@@ -196,44 +196,6 @@
     .stage-text{
       border-right:1px solid var(--line);
     }
-    .text-layer{
-      position:relative;
-      z-index:1;
-      padding:clamp(18px, 4vw, 34px) clamp(16px, 4vw, 36px);
-      min-height:320px;
-      height:100%;
-      font-family:'Battambang', 'Courier New', ui-monospace, monospace;
-      font-size:16px;
-      line-height:1.8;
-      outline:none;
-      white-space:pre-wrap;
-      word-wrap:break-word;
-      overflow-wrap:break-word;
-    }
-    .text-layer:empty:before{
-      content: attr(data-placeholder);
-      color:#b8ae9c;
-    }
-    .letter{
-      position:absolute;
-      pointer-events:none;
-      user-select:none;
-      white-space:pre;
-      font-family:'Battambang', 'Courier New', ui-monospace, monospace;
-    }
-    .text-layer.move-mode .letter{
-      pointer-events:auto;
-      cursor:grab;
-      touch-action:none;
-    }
-    .text-layer.move-mode .letter.dragging{
-      cursor:grabbing;
-      z-index:5;
-    }
-    .font-btn{
-      font-family:Georgia, serif;
-      font-weight:700;
-    }
     .draw-canvas{
       position:absolute;
       top:0; left:0;
@@ -295,7 +257,6 @@
       .stage{ flex-direction:column; }
       .stage-text{ border-right:none; border-bottom:1px solid var(--line); }
       .stage-image{ min-height:240px; }
-      .text-layer{ min-height:260px; }
     }
 
     /* Phone */
@@ -312,7 +273,6 @@
       .tool-btn{ padding:6px 8px; }
       .bar-label{ display:none; }
       .pen-swatch{ width:20px; height:20px; min-width:20px; }
-      .text-layer{ font-size:15px; }
     }
   </style>
 </head>
@@ -322,8 +282,6 @@
 
   <div class="toolbar">
     <div class="tool-group" role="tablist" aria-label="Mode">
-      <button class="tool-btn active" data-mode="type">វាយពាក្យ</button>
-      <button class="tool-btn" data-mode="move">រំកិលអក្សរ</button>
       <button onclick="window.location.href='../index.html'" class="homeBtn">🏡 Home</button>
     </div>
 
@@ -331,18 +289,8 @@
       <button id="drawToggleBtn" class="tool-btn" data-toggle="draw" title="Draw anytime, no need to switch modes">សរសេរ</button>
     </div>
 
-    <div class="tool-group" aria-label="Font size">
-      <button id="fontMinus" class="tool-btn font-btn" title="Smaller text">តូច−</button>
-      <button id="fontPlus" class="tool-btn font-btn" title="Larger text">ធំ+</button>
-    </div>
-
     <div class="tool-group" aria-label="Reference image">
       <span class="bar-label">ផ្ទាំងរូបភាព</span>
-      <select id="imageSelect" class="img-select" title="Choose which reference image to display">
-        <option value="1.svg">ព្យព្ជានៈខ្លាំង ខ្យោយ</option>
-        <option value="2.svg">សូរស្រៈប្រើជាមួយពួក អ</option>
-        <option value="3.svg">សូរស្រៈប្រើជាមួយពួក អ៊</option>
-      </select>
       <button id="cameraBtn" class="text-btn" title="Take a photo with your camera">📷 ថតរូប</button>
       <button id="uploadBtn" class="text-btn" title="Upload a photo from your device">🖼️ ផ្ទុករូបភាព</button>
       <input id="cameraInput" type="file" accept="image/*" capture="environment" style="display:none;">
@@ -375,17 +323,11 @@
       <button id="clearDrawBtn" class="text-btn">សម្អាត</button>
     </div>
 
-    <div id="moveBar" class="sub-bar" style="display:none;">
-      <span class="bar-label">drag any letter to move it</span>
-      <button id="resetPositionsBtn" class="text-btn">reset layout</button>
-    </div>
 
-    <button id="clearTextBtn" class="text-btn danger">clear text</button>
   </div>
 
   <div id="stage" class="stage">
     <div class="stage-half stage-text">
-      <div id="textLayer" class="text-layer" contenteditable="true" data-placeholder="Start typing here…"></div>
       <canvas id="drawCanvas" class="draw-canvas"></canvas>
     </div>
     <div class="stage-half stage-image">
@@ -400,21 +342,18 @@
 
   
 <script>
-  const textLayer = document.getElementById('textLayer');
   const canvas = document.getElementById('drawCanvas');
   const ctx = canvas.getContext('2d');
   const imageCanvas = document.getElementById('drawCanvasImage');
   const imageCtx = imageCanvas.getContext('2d');
+  const stageText = document.querySelector('.stage-text');
   const stageImage = document.querySelector('.stage-image');
   const toolbarEl = document.querySelector('.toolbar');
 
-  let mode = 'type'; // 'type' | 'move'
   let drawEnabled = false; // drawing is an independent overlay, not an exclusive mode
   let drawColor = '#2A2622';
   let drawSize = 45;
   let isEraser = false;
-  let fontSize = 16;
-  let isShattered = false;
 
   // Each drawable surface tracks its own canvas/ctx/strokes independently,
   // but shares the same color/size settings and draw mode.
@@ -430,8 +369,8 @@
   }
 
   const textSurface = makeSurface(canvas, ctx, () => ({
-    w: Math.max(textLayer.offsetWidth, textLayer.scrollWidth),
-    h: Math.max(textLayer.offsetHeight, textLayer.scrollHeight, 320)
+    w: stageText.clientWidth,
+    h: stageText.clientHeight
   }));
   const imageSurface = makeSurface(imageCanvas, imageCtx, () => ({
     w: stageImage.clientWidth,
@@ -540,130 +479,9 @@
 
   document.getElementById('drawToggleBtn').addEventListener('click', () => setDrawEnabled(!drawEnabled));
 
-  function setMode(next){
-    mode = next;
-    document.querySelectorAll('.tool-btn[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
-    document.getElementById('moveBar').style.display = mode === 'move' ? 'flex' : 'none';
-    textLayer.classList.toggle('move-mode', mode === 'move');
-
-    if(mode === 'move'){
-      textLayer.setAttribute('contenteditable', 'false');
-      shatterText();
-    } else {
-      textLayer.setAttribute('contenteditable', 'true');
-      if(mode === 'type' && !drawEnabled) textLayer.focus();
-    }
-    updateCanvasInteractivity();
-  }
-
-  // ---- Font size ----
-  function updateFontSize(delta){
-    fontSize = Math.min(100, Math.max(45, fontSize + delta));
-    textLayer.style.fontSize = fontSize + 'px';
-    sizeCanvasToLayer();
-  }
-  document.getElementById('fontMinus').addEventListener('click', () => updateFontSize(-2));
-  document.getElementById('fontPlus').addEventListener('click', () => updateFontSize(2));
-
-  // ---- Move mode: shatter text into individually draggable letters ----
-  function getClientPos(e){
-    if(e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    return { x: e.clientX, y: e.clientY };
-  }
-
-  function attachDrag(letter){
-    let dragOffsetX = 0, dragOffsetY = 0, isDragging = false;
-
-    function onDown(e){
-      if(mode !== 'move') return;
-      isDragging = true;
-      letter.classList.add('dragging');
-      const p = getClientPos(e);
-      const rect = letter.getBoundingClientRect();
-      dragOffsetX = p.x - rect.left;
-      dragOffsetY = p.y - rect.top;
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    function onMove(e){
-      if(!isDragging) return;
-      const p = getClientPos(e);
-      const stageRect = textLayer.getBoundingClientRect();
-      letter.style.left = (p.x - stageRect.left - dragOffsetX) + 'px';
-      letter.style.top = (p.y - stageRect.top - dragOffsetY) + 'px';
-      e.preventDefault();
-    }
-    function onUp(){
-      isDragging = false;
-      letter.classList.remove('dragging');
-    }
-
-    letter.addEventListener('mousedown', onDown);
-    letter.addEventListener('touchstart', onDown, { passive:false });
-    window.addEventListener('mousemove', onMove, { passive:false });
-    window.addEventListener('touchmove', onMove, { passive:false });
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('touchend', onUp);
-  }
-
-  function shatterText(){
-    if(isShattered) return;
-    const rawText = textLayer.innerText || '';
-    textLayer.innerHTML = '';
-    if(!rawText.trim()){ isShattered = true; return; }
-
-    // Step 1: lay characters out normally so the browser computes natural wrapping
-    const lines = rawText.split('\n');
-    const flowSpans = [];
-    lines.forEach((line, li) => {
-      [...line].forEach(ch => {
-        const span = document.createElement('span');
-        span.textContent = ch === ' ' ? '\u00A0' : ch;
-        textLayer.appendChild(span);
-        flowSpans.push(span);
-      });
-      if(li < lines.length - 1) textLayer.appendChild(document.createElement('br'));
-    });
-
-    // Step 2: measure each character's natural position relative to the text layer
-    const stageRect = textLayer.getBoundingClientRect();
-    const positions = flowSpans.map(span => {
-      const r = span.getBoundingClientRect();
-      return { left: r.left - stageRect.left, top: r.top - stageRect.top, text: span.textContent };
-    });
-
-    // Step 3: rebuild as absolutely-positioned, independently draggable letters
-    textLayer.innerHTML = '';
-    positions.forEach(pos => {
-      const letter = document.createElement('span');
-      letter.className = 'letter';
-      letter.textContent = pos.text;
-      letter.style.left = pos.left + 'px';
-      letter.style.top = pos.top + 'px';
-      letter.dataset.origLeft = pos.left;
-      letter.dataset.origTop = pos.top;
-      textLayer.appendChild(letter);
-      attachDrag(letter);
-    });
-    isShattered = true;
-  }
-
-  function resetLetterPositions(){
-    textLayer.querySelectorAll('.letter').forEach(letter => {
-      letter.style.left = letter.dataset.origLeft + 'px';
-      letter.style.top = letter.dataset.origTop + 'px';
-    });
-  }
-  document.getElementById('resetPositionsBtn').addEventListener('click', resetLetterPositions);
-
-  // ---- Right-side image: chosen via the image dropdown, defaults to image/1.svg ----
+  // ---- Right-side image: defaults to image/1.svg, replaceable via camera/upload ----
   const previewImage = document.getElementById('previewImage');
   const imagePlaceholder = document.getElementById('imagePlaceholder');
-  const imageSelect = document.getElementById('imageSelect');
-
-  imageSelect.addEventListener('change', function(){
-    previewImage.src = 'image/' + this.value;
-  });
 
   previewImage.addEventListener('error', function() {
     this.style.display = 'none';
@@ -704,10 +522,6 @@
   cameraInput.addEventListener('change', e => handleUserPhoto(e.target.files[0]));
   uploadInput.addEventListener('change', e => handleUserPhoto(e.target.files[0]));
 
-  document.querySelectorAll('.tool-btn[data-mode]').forEach(btn => {
-    btn.addEventListener('click', () => setMode(btn.dataset.mode));
-  });
-
   document.querySelectorAll('.pen-swatch').forEach(sw => {
     sw.addEventListener('click', () => {
       drawColor = sw.dataset.color;
@@ -741,14 +555,6 @@
     redrawStrokes(lastUsedSurface);
   });
 
-  document.getElementById('clearTextBtn').addEventListener('click', () => {
-    if(confirm('Clear all typed text? This won\'t affect your drawing.')){
-      textLayer.innerHTML = '';
-      isShattered = false;
-      if(mode === 'type') textLayer.focus();
-    }
-  });
-
   // ---- Keep body padding clear of the fixed bottom toolbar, even as its height changes ----
   function adjustBodyPadding(){
     document.body.style.paddingBottom = (toolbarEl.offsetHeight + 28) + 'px';
@@ -757,13 +563,12 @@
   roToolbar.observe(toolbarEl);
 
   const ro = new ResizeObserver(() => sizeCanvasToLayer());
-  ro.observe(textLayer);
+  ro.observe(stageText);
   ro.observe(stageImage);
   window.addEventListener('resize', sizeCanvasToLayer);
   window.addEventListener('orientationchange', () => setTimeout(sizeCanvasToLayer, 200));
   window.addEventListener('load', () => {
     sizeCanvasToLayer();
-    setMode('type');
     updateCanvasInteractivity();
     adjustBodyPadding();
   });
