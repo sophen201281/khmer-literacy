@@ -173,11 +173,16 @@
             background: #fcf8f0;
         }
 
-        /* --- Cover & Back Cover --- */
+        /* --- Cover & Back Cover (full width, centered) --- */
         .cover {
             background: #2b4a5c;
             color: #f5e9da;
             border: 2px solid #1d3442;
+            width: 100% !important;
+            height: 100% !important;
+            left: 0 !important;
+            border-radius: 8px !important;
+            border-right: 2px solid #1d3442 !important;
         }
         .cover h1 {
             font-size: clamp(1.6rem, 4vw, 3rem);
@@ -202,8 +207,11 @@
             background: #2b4a5c;
             color: #f5e9da;
             border: 2px solid #1d3442;
-            font-size: clamp(1.2rem, 2.5vw, 2rem);
-            letter-spacing: 1px;
+            width: 100% !important;
+            height: 100% !important;
+            left: 0 !important;
+            border-radius: 8px !important;
+            border-left: 2px solid #1d3442 !important;
         }
         .back-cover .sub {
             opacity: 0.5;
@@ -467,12 +475,14 @@
             pointer-events: none;
             transform: translateX(-50%);
         }
+        .flipbook.cover-only::before { display: none; }
+        .flipbook.back-only::before { display: none; }
 
         /* --- Single-page centering for cover/back --- */
-        .flipbook.cover-only { transform: translateX(25%); }
-        .flipbook.back-only { transform: translateX(-25%); }
-        .flipbook.cover-only .touch-zones-container { transform: translateX(-25%); }
-        .flipbook.back-only .touch-zones-container { transform: translateX(25%); }
+        .flipbook.cover-only { transform: none; }
+        .flipbook.back-only { transform: none; }
+        .flipbook.cover-only .touch-zones-container { transform: none; }
+        .flipbook.back-only .touch-zones-container { transform: none; }
 
         /* --- Flip Animations --- */
         @keyframes flipLeaveForward {
@@ -572,24 +582,29 @@
 
     <!-- The Book -->
     <div class="flipbook-wrapper" id="wrapper">
-        <div class="flipbook cover-only" id="flipbook">
+        <div class="flipbook" id="flipbook">
 
-            <!-- SPREAD 0: FRONT COVER + empty -->
-            <div class="page page-left cover" data-page="0">
+            <!-- SPREAD 0: FRONT COVER (full width) -->
+            <div class="page cover" data-page="0">
                 <h1 id="coverTitle">📖 ខ្ញុំអាចមើលឃើញ</h1>
                 <div class="sub" id="coverSub">✦ អូសដើម្បីស្វែងយល់ ✦</div>
             </div>
-            <div class="page page-right empty-page" data-page="1" style="display: none;"><span style="opacity:0.2;">·</span></div>
 
-            <!-- SPREAD 1: empty + title -->
-            <div class="page page-left empty-page" data-page="2"><span style="opacity:0.3;">⋆</span></div>
-            <div class="page page-right" data-page="3">
+            <!-- SPREAD 1: Title page (left) + empty (right) -->
+            <div class="page page-left" data-page="1">
                 <div class="page-title" id="titlePage">ខ្ញុំ អាច មើល ឃើញ</div>
                 <div style="font-size:clamp(1.8rem, 4.5vw, 3rem); margin-top:0.1rem;" id="titleEmoji">👁️</div>
             </div>
+            <div class="page page-right empty-page" data-page="2"><span style="opacity:0.3;">⋆</span></div>
 
-            <!-- SPREAD 2: FLOWER -->
-            <div class="page page-left" data-page="4">
+            <!-- SPREAD 2: FLOWER (left: emoji, right: word) -->
+            <div class="page page-left" data-page="3">
+                <div class="emoji-container" id="EmojiContainer1">
+                    <span class="hidden-emoji" id="Emoji1">🌸</span>
+                    <div class="emoji-cover" id="EmojiCover1"><span></span></div>
+                </div>
+            </div>
+            <div class="page page-right" data-page="4">
                 <div class="sentence-container">
                     <span class="word-box pattern-word" data-pattern="1">ខ្ញុំ</span>
                     <span class="word-box pattern-word" data-pattern="2">អាច</span>
@@ -603,15 +618,15 @@
                     </div>
                 </div>
             </div>
-            <div class="page page-right" data-page="5">
-                <div class="emoji-container" id="EmojiContainer1">
-                    <span class="hidden-emoji" id="Emoji1">🌸</span>
-                    <div class="emoji-cover" id="EmojiCover1"><span></span></div>
+
+            <!-- SPREAD 3: DOG (left: emoji, right: word) -->
+            <div class="page page-left" data-page="5">
+                <div class="emoji-container" id="EmojiContainer2">
+                    <span class="hidden-emoji" id="Emoji2">🐕</span>
+                    <div class="emoji-cover" id="EmojiCover2"><span></span></div>
                 </div>
             </div>
-
-            <!-- SPREAD 3: DOG -->
-            <div class="page page-left" data-page="6">
+            <div class="page page-right" data-page="6">
                 <div class="sentence-container">
                     <span class="word-box pattern-word" data-pattern="1">ខ្ញុំ</span>
                     <span class="word-box pattern-word" data-pattern="2">អាច</span>
@@ -625,15 +640,15 @@
                     </div>
                 </div>
             </div>
-            <div class="page page-right" data-page="7">
-                <div class="emoji-container" id="EmojiContainer2">
-                    <span class="hidden-emoji" id="Emoji2">🐕</span>
-                    <div class="emoji-cover" id="EmojiCover2"><span></span></div>
+
+            <!-- SPREAD 4: CAT (left: emoji, right: word) -->
+            <div class="page page-left" data-page="7">
+                <div class="emoji-container" id="EmojiContainer3">
+                    <span class="hidden-emoji" id="Emoji3">🐈</span>
+                    <div class="emoji-cover" id="EmojiCover3"><span></span></div>
                 </div>
             </div>
-
-            <!-- SPREAD 4: CAT -->
-            <div class="page page-left" data-page="8">
+            <div class="page page-right" data-page="8">
                 <div class="sentence-container">
                     <span class="word-box pattern-word" data-pattern="1">ខ្ញុំ</span>
                     <span class="word-box pattern-word" data-pattern="2">អាច</span>
@@ -647,15 +662,15 @@
                     </div>
                 </div>
             </div>
-            <div class="page page-right" data-page="9">
-                <div class="emoji-container" id="EmojiContainer3">
-                    <span class="hidden-emoji" id="Emoji3">🐈</span>
-                    <div class="emoji-cover" id="EmojiCover3"><span></span></div>
+
+            <!-- SPREAD 5: CAR (left: emoji, right: word) -->
+            <div class="page page-left" data-page="9">
+                <div class="emoji-container" id="EmojiContainer4">
+                    <span class="hidden-emoji" id="Emoji4">🚗</span>
+                    <div class="emoji-cover" id="EmojiCover4"><span></span></div>
                 </div>
             </div>
-
-            <!-- SPREAD 5: CAR -->
-            <div class="page page-left" data-page="10">
+            <div class="page page-right" data-page="10">
                 <div class="sentence-container">
                     <span class="word-box pattern-word" data-pattern="1">ខ្ញុំ</span>
                     <span class="word-box pattern-word" data-pattern="2">អាច</span>
@@ -669,15 +684,15 @@
                     </div>
                 </div>
             </div>
-            <div class="page page-right" data-page="11">
-                <div class="emoji-container" id="EmojiContainer4">
-                    <span class="hidden-emoji" id="Emoji4">🚗</span>
-                    <div class="emoji-cover" id="EmojiCover4"><span></span></div>
+
+            <!-- SPREAD 6: TREE (left: emoji, right: word) -->
+            <div class="page page-left" data-page="11">
+                <div class="emoji-container" id="EmojiContainer5">
+                    <span class="hidden-emoji" id="Emoji5">🌳</span>
+                    <div class="emoji-cover" id="EmojiCover5"><span></span></div>
                 </div>
             </div>
-
-            <!-- SPREAD 6: TREE -->
-            <div class="page page-left" data-page="12">
+            <div class="page page-right" data-page="12">
                 <div class="sentence-container">
                     <span class="word-box pattern-word" data-pattern="1">ខ្ញុំ</span>
                     <span class="word-box pattern-word" data-pattern="2">អាច</span>
@@ -691,15 +706,15 @@
                     </div>
                 </div>
             </div>
-            <div class="page page-right" data-page="13">
-                <div class="emoji-container" id="EmojiContainer5">
-                    <span class="hidden-emoji" id="Emoji5">🌳</span>
-                    <div class="emoji-cover" id="EmojiCover5"><span></span></div>
+
+            <!-- SPREAD 7: SUN (left: emoji, right: word) -->
+            <div class="page page-left" data-page="13">
+                <div class="emoji-container" id="EmojiContainer6">
+                    <span class="hidden-emoji" id="Emoji6">☀️</span>
+                    <div class="emoji-cover" id="EmojiCover6"><span></span></div>
                 </div>
             </div>
-
-            <!-- SPREAD 7: SUN -->
-            <div class="page page-left" data-page="14">
+            <div class="page page-right" data-page="14">
                 <div class="sentence-container">
                     <span class="word-box pattern-word" data-pattern="1">ខ្ញុំ</span>
                     <span class="word-box pattern-word" data-pattern="2">អាច</span>
@@ -713,16 +728,9 @@
                     </div>
                 </div>
             </div>
-            <div class="page page-right" data-page="15">
-                <div class="emoji-container" id="EmojiContainer6">
-                    <span class="hidden-emoji" id="Emoji6">☀️</span>
-                    <div class="emoji-cover" id="EmojiCover6"><span></span></div>
-                </div>
-            </div>
 
-            <!-- SPREAD 8: BACK COVER -->
-            <div class="page page-left empty-page" data-page="16"><span style="opacity:0.2;">·</span></div>
-            <div class="page page-right back-cover" data-page="17">
+            <!-- SPREAD 8: BACK COVER (full width) -->
+            <div class="page back-cover" data-page="15">
                 <div style="font-size: clamp(2.2rem, 5.5vw, 3.8rem); margin-bottom: 0.1rem;" id="backEmoji">📚</div>
                 <div id="backText" style="font-size: clamp(1.2rem, 2.5vw, 2rem);">ចប់ហើយ</div>
                 <div class="sub" id="backSub">✦ អរគុណ ✦</div>
@@ -776,8 +784,9 @@
             const touchRight = document.getElementById('touchRight');
             const flipbookEl = document.getElementById('flipbook');
 
-            const TOTAL_PAGES = pages.length;
-            const SPREADS = TOTAL_PAGES / 2;
+            // Pages: 0=cover, 1-2=title spread, 3-4=flower, 5-6=dog, 7-8=cat, 9-10=car, 11-12=tree, 13-14=sun, 15=back
+            const TOTAL_PAGES = 16;
+            const SPREADS = 9; // 0:cover, 1:title, 2:flower, 3:dog, 4:cat, 5:car, 6:tree, 7:sun, 8:back
             let currentSpread = 0;
             let isFlipping = false;
 
@@ -912,18 +921,34 @@
             function updateFlip() {
                 pages.forEach(page => {
                     const pageNum = parseInt(page.getAttribute('data-page'), 10);
-                    const pageSpread = Math.floor(pageNum / 2);
-                    const isLeft = page.classList.contains('page-left');
-                    const isRight = page.classList.contains('page-right');
+                    let pageSpread;
+                    if (pageNum === 0) pageSpread = 0;
+                    else if (pageNum === 15) pageSpread = 8;
+                    else pageSpread = Math.floor(pageNum / 2) + 1;
 
-                    page.style.display = 'flex';
-                    page.style.width = '50%';
-                    page.style.left = isLeft ? '0' : '50%';
-                    page.style.borderRadius = isLeft ? '8px 0 0 8px' : '0 8px 8px 0';
+                    // Special styling for cover and back cover (full width)
+                    if (pageNum === 0 || pageNum === 15) {
+                        page.style.width = '100%';
+                        page.style.left = '0';
+                        page.style.borderRadius = '8px';
+                        page.style.borderRight = pageNum === 0 ? '2px solid #1d3442' : '2px solid #1d3442';
+                        page.style.borderLeft = pageNum === 15 ? '2px solid #1d3442' : '2px solid #1d3442';
+                    } else {
+                        const isLeft = (pageNum % 2 === 1);
+                        page.style.width = '50%';
+                        page.style.left = isLeft ? '0' : '50%';
+                        page.style.borderRadius = isLeft ? '8px 0 0 8px' : '0 8px 8px 0';
+                        page.style.borderRight = isLeft ? '1px solid #d0c0ac' : '1px solid #d0c0ac';
+                        page.style.borderLeft = isLeft ? '1px solid #d0c0ac' : '1px solid #d0c0ac';
+                    }
 
                     if (pageSpread < currentSpread) {
-                        if (isRight) page.style.transform = 'rotateY(-180deg)';
-                        else page.style.transform = 'rotateY(0deg)';
+                        if (pageNum !== 0 && pageNum !== 15) {
+                            if (pageNum % 2 === 1) page.style.transform = 'rotateY(0deg)';
+                            else page.style.transform = 'rotateY(-180deg)';
+                        } else {
+                            page.style.transform = 'rotateY(0deg)';
+                        }
                         page.style.zIndex = 10 + pageSpread;
                         page.style.filter = 'brightness(0.92) drop-shadow(-2px 0 6px rgba(0,0,0,0.06))';
                     } else if (pageSpread === currentSpread) {
@@ -931,50 +956,87 @@
                         page.style.zIndex = 150;
                         page.style.filter = 'brightness(1) drop-shadow(0 0 6px rgba(0,0,0,0.02))';
                     } else {
-                        if (isLeft) page.style.transform = 'rotateY(180deg)';
-                        else page.style.transform = 'rotateY(0deg)';
+                        if (pageNum === 0 || pageNum === 15) {
+                            page.style.transform = 'rotateY(0deg)';
+                        } else {
+                            if (pageNum % 2 === 1) page.style.transform = 'rotateY(180deg)';
+                            else page.style.transform = 'rotateY(0deg)';
+                        }
                         page.style.zIndex = 10 + (TOTAL_PAGES - pageNum);
                         page.style.filter = 'brightness(0.96) drop-shadow(2px 0 8px rgba(0,0,0,0.04))';
+                    }
+
+                    // Hide pages that should not be visible
+                    if (pageSpread === currentSpread) {
+                        page.style.display = 'flex';
+                    } else {
+                        page.style.display = 'none';
                     }
                 });
 
                 if (currentSpread < spreadLabels.length) pageIndicator.textContent = spreadLabels[currentSpread];
 
-                const frontEmpty = document.querySelector('.page[data-page="1"]');
-                const backEmpty = document.querySelector('.page[data-page="16"]');
-
+                // Handle cover-only and back-only states
                 if (currentSpread === 0) {
-                    if (frontEmpty) frontEmpty.style.display = 'none';
                     flipbookEl.classList.add('cover-only');
+                    flipbookEl.classList.remove('back-only');
+                    // Show cover
+                    document.querySelector('.page[data-page="0"]').style.display = 'flex';
                 } else {
-                    if (frontEmpty) frontEmpty.style.display = 'flex';
                     flipbookEl.classList.remove('cover-only');
                 }
+                
                 if (currentSpread === SPREADS - 1) {
-                    if (backEmpty) backEmpty.style.display = 'none';
                     flipbookEl.classList.add('back-only');
+                    flipbookEl.classList.remove('cover-only');
+                    // Show back cover
+                    document.querySelector('.page[data-page="15"]').style.display = 'flex';
                 } else {
-                    if (backEmpty) backEmpty.style.display = 'flex';
                     flipbookEl.classList.remove('back-only');
                 }
             }
 
             function getFlipPages(oldSpread, newSpread, dir) {
                 if (dir === 1) {
-                    return {
-                        leaving: document.querySelector(`.page-right[data-page="${oldSpread * 2 + 1}"]`),
-                        entering: document.querySelector(`.page-left[data-page="${newSpread * 2}"]`)
-                    };
+                    if (oldSpread === 0) {
+                        return {
+                            leaving: document.querySelector('.page[data-page="0"]'),
+                            entering: document.querySelector('.page[data-page="1"]')
+                        };
+                    } else if (newSpread === 8) {
+                        return {
+                            leaving: document.querySelector('.page[data-page="14"]'),
+                            entering: document.querySelector('.page[data-page="15"]')
+                        };
+                    } else {
+                        return {
+                            leaving: document.querySelector(`.page[data-page="${(oldSpread - 1) * 2}"]`),
+                            entering: document.querySelector(`.page[data-page="${(newSpread - 1) * 2 + 1}"]`)
+                        };
+                    }
                 } else {
-                    return {
-                        leaving: document.querySelector(`.page-left[data-page="${oldSpread * 2}"]`),
-                        entering: document.querySelector(`.page-right[data-page="${newSpread * 2 + 1}"]`)
-                    };
+                    if (newSpread === 0) {
+                        return {
+                            leaving: document.querySelector('.page[data-page="1"]'),
+                            entering: document.querySelector('.page[data-page="0"]')
+                        };
+                    } else if (oldSpread === 8) {
+                        return {
+                            leaving: document.querySelector('.page[data-page="15"]'),
+                            entering: document.querySelector('.page[data-page="14"]')
+                        };
+                    } else {
+                        return {
+                            leaving: document.querySelector(`.page[data-page="${(oldSpread - 1) * 2 + 1}"]`),
+                            entering: document.querySelector(`.page[data-page="${(newSpread - 1) * 2}"]`)
+                        };
+                    }
                 }
             }
 
             function playFlipAnimation(el, name) {
                 if (!el) return;
+                el.style.display = 'flex';
                 el.style.zIndex = 500;
                 el.style.animation = 'none';
                 void el.offsetWidth;
@@ -993,8 +1055,11 @@
                 currentSpread = spreadIndex;
                 updateFlip();
 
-                playFlipAnimation(leaving, dir === 1 ? 'flipLeaveForward' : 'flipLeaveBackward');
-                playFlipAnimation(entering, dir === 1 ? 'flipEnterForward' : 'flipEnterBackward');
+                // Only animate if we have both pages
+                if (leaving && entering) {
+                    playFlipAnimation(leaving, dir === 1 ? 'flipLeaveForward' : 'flipLeaveBackward');
+                    playFlipAnimation(entering, dir === 1 ? 'flipEnterForward' : 'flipEnterBackward');
+                }
 
                 setTimeout(() => {
                     if (leaving) leaving.style.animation = '';
@@ -1007,7 +1072,6 @@
             // ============================================================
             //  EVENT LISTENERS
             // ============================================================
-            // Page turning
             touchLeft.addEventListener('click', function(e) {
                 if (isFlipping) return;
                 if (currentSpread > 0) goToSpread(currentSpread - 1);
@@ -1033,7 +1097,6 @@
 
             wrapper.addEventListener('contextmenu', (e) => e.preventDefault());
 
-            // Resize handler
             function handleResize() { updateFlip(); }
             window.addEventListener('resize', handleResize);
             window.addEventListener('orientationchange', function() { setTimeout(handleResize, 300); });
