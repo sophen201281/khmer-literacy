@@ -274,7 +274,6 @@
 
   <div class="nav">
     <button onclick="randomCard()">🎲 ក្រឡុក</button>
-    <button onclick="deleteCard()">🗑 លុប</button>
     <button onclick="window.location.href='../index.html'" class="homeBtn">🏡 Home</button>
   </div>
 </div>
@@ -389,15 +388,6 @@
   }
 
   // ============ CARD OPERATIONS ============
-  function deleteCard(){
-    if(!cards.length) return;
-    cards.splice(current,1);
-    if(current >= cards.length) current = cards.length-1;
-    if(current < 0) current = 0;
-    weeksData[currentWeek] = cards.map(c => c.text);
-    renderCards();
-  }
-
   function randomCard(){
     if(cards.length < 2) return;
     let r;
@@ -438,7 +428,6 @@
   loadWeek(0);
   updateWeekUI();
 
-  window.deleteCard = deleteCard;
   window.randomCard = randomCard;
   window.next = next;
   window.prev = prev;
