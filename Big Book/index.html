@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ខ្ញុំអាចមើលឃើញ · 3D Flip Book</title>
-    <!-- Google Font: Khmer Battambang for authentic Khmer typography -->
+    <!-- Google Font: Khmer Battambang -->
     <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@100;300;400;700;900&display=swap" rel="stylesheet">
     <style>
         /* --- Reset & Global Book Styling --- */
@@ -20,7 +20,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: #c9b6a2;  /* warm, aged paper backdrop */
+            background: #c9b6a2;
             font-family: 'Battambang', 'Segoe UI', Roboto, system-ui, sans-serif;
             display: flex;
             flex-direction: column;
@@ -32,7 +32,7 @@
             top: 0; left: 0; right: 0; bottom: 0;
         }
 
-        /* --- Home Button (elegant, understated) --- */
+        /* --- Home Button --- */
         .home-btn {
             position: fixed;
             top: 16px;
@@ -59,7 +59,54 @@
         .home-btn:hover { background: rgba(60, 80, 95, 0.95); transform: scale(1.04); border-color: #d4c4b0; }
         .home-btn:active { transform: scale(0.94); }
 
-        /* --- Mode Selector (refined dropdown) --- */
+        /* --- Navigation Buttons (Cover, Spin, Back) --- */
+        .nav-controls {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 400;
+            display: flex;
+            gap: 12px;
+            background: rgba(40, 55, 65, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 10px 18px;
+            border-radius: 50px;
+            border: 1.5px solid #b8a690;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: #f5e9da;
+            border: 1.5px solid #8ba0b0;
+            border-radius: 30px;
+            padding: 6px 16px;
+            font-size: clamp(0.75rem, 1.4vw, 0.95rem);
+            font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: #d4c4b0;
+            transform: scale(1.05);
+        }
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+        .nav-btn.spin-btn {
+            background: rgba(180, 140, 100, 0.25);
+            border-color: #c4a88a;
+        }
+        .nav-btn.spin-btn:hover {
+            background: rgba(180, 140, 100, 0.4);
+        }
+
+        /* --- Mode Selector --- */
         .mode-select-wrap {
             position: fixed;
             bottom: 24px;
@@ -104,7 +151,7 @@
         .mode-select-wrap select:focus { border-color: #d4c4b0; }
         .mode-select-wrap select option { background: #2b4a5c; color: #f5e9da; }
 
-        /* --- Flipbook Container (the book itself) --- */
+        /* --- Flipbook Container --- */
         .flipbook-wrapper {
             perspective: 2000px;
             width: 100%;
@@ -129,10 +176,10 @@
             max-height: 52vh;
             aspect-ratio: 3 / 4;
             min-height: 0;
-            transition: transform 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+            transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        /* --- Individual Pages (paper texture & shadow) --- */
+        /* --- Pages --- */
         .page {
             position: absolute;
             width: 50%;
@@ -173,7 +220,7 @@
             background: #fcf8f0;
         }
 
-        /* --- Cover & Back Cover (cloth-bound feel) --- */
+        /* --- Cover & Back Cover --- */
         .cover {
             background: #2b4a5c;
             color: #f5e9da;
@@ -212,7 +259,6 @@
             font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
         }
 
-        /* --- Interior Page Title --- */
         .page-title {
             font-size: clamp(1.6rem, 4vw, 3rem);
             font-weight: 700;
@@ -223,7 +269,7 @@
             padding: 0 0.3rem;
         }
 
-        /* --- Sentence & Interactive Elements --- */
+        /* --- Interactive Elements --- */
         .sentence-container {
             display: flex;
             flex-wrap: wrap;
@@ -289,7 +335,6 @@
         }
         .hidden-word.revealed { opacity: 1; }
 
-        /* --- Drag Covers (the "peel" interaction) --- */
         .word-cover {
             position: absolute;
             top: 0;
@@ -404,7 +449,7 @@
             font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
         }
 
-        /* --- Touch Zones (page-turn hot spots) --- */
+        /* --- Touch Zones --- */
         .touch-zones-container {
             position: absolute;
             top: 0;
@@ -425,7 +470,6 @@
         .touch-left { left: 0; }
         .touch-right { right: 0; }
 
-        /* --- Page Indicator (elegant tag) --- */
         .page-indicator {
             position: fixed;
             top: 12px;
@@ -445,7 +489,7 @@
             font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
         }
 
-        /* --- Book Spine Shadow & Glow --- */
+        /* --- Book Shadow & Spine --- */
         .flipbook-wrapper::after {
             content: '';
             position: absolute;
@@ -471,13 +515,13 @@
             transform: translateX(-50%);
         }
 
-        /* --- Cover-only / Back-only centering (single-page view) --- */
+        /* --- Single-page centering for cover/back --- */
         .flipbook.cover-only { transform: translateX(25%); }
         .flipbook.back-only { transform: translateX(-25%); }
         .flipbook.cover-only .touch-zones-container { transform: translateX(-25%); }
         .flipbook.back-only .touch-zones-container { transform: translateX(25%); }
 
-        /* --- Flip Animations (page-turn theatre) --- */
+        /* --- Flip Animations --- */
         @keyframes flipLeaveForward {
             0%   { transform: rotateY(0deg) scaleX(1); filter: brightness(1) drop-shadow(0 0 6px rgba(0,0,0,0.02)); }
             50%  { transform: rotateY(-92deg) scaleX(0.93); filter: brightness(0.75) drop-shadow(-14px 0 22px rgba(0,0,0,0.28)); }
@@ -499,7 +543,7 @@
             100% { transform: rotateY(0deg) scaleX(1); filter: brightness(1) drop-shadow(0 0 6px rgba(0,0,0,0.02)); }
         }
 
-        /* --- Responsive Refinements for a True Book Feel --- */
+        /* --- Responsive --- */
         @media (max-height: 700px) { .flipbook-wrapper { height: 46vh; max-height: 46vh; } .flipbook { max-height: 46vh; } }
         @media (max-height: 600px) { .flipbook-wrapper { height: 42vh; max-height: 42vh; } .flipbook { max-height: 42vh; aspect-ratio: 4/3; } }
         @media (max-height: 500px) { .flipbook-wrapper { height: 38vh; max-height: 38vh; } .flipbook { max-height: 38vh; aspect-ratio: 4/3; } }
@@ -513,7 +557,7 @@
         @media (min-width: 1024px) {
             .flipbook-wrapper { max-width: 1000px; height: 80vh; max-height: 80vh; perspective: 3000px; }
             .flipbook { max-width: 1000px; max-height: 80vh; }
-            .home-btn, .page-indicator { font-size: 1.05rem; }
+            .home-btn, .page-indicator, .nav-btn { font-size: 1.05rem; }
         }
 
         @media (min-width: 1024px) and (max-height: 750px) {
@@ -533,6 +577,8 @@
             .cover h1 { font-size: clamp(2rem, 4.5vw, 3.5rem) !important; }
             .interactive-box { min-height: 45px !important; min-width: 85px !important; padding: 6px 14px !important; }
             .emoji-container { min-width: 85px !important; min-height: 85px !important; padding: 8px !important; }
+            .nav-controls { bottom: 76px; }
+            .mode-select-wrap { bottom: 20px; }
         }
 
         @media (orientation: landscape) and (min-width: 1024px) {
@@ -552,13 +598,24 @@
             .word-cover { font-size: clamp(1.6rem, 4vw, 3rem) !important; }
             .cover h1 { font-size: clamp(1.4rem, 3.5vw, 2.5rem) !important; }
             .page-title { font-size: clamp(1.4rem, 3.5vw, 2.5rem) !important; }
+            .nav-controls { bottom: 68px; }
+            .mode-select-wrap { bottom: 16px; }
+            .nav-btn { padding: 4px 12px; font-size: 0.7rem; }
         }
     </style>
 </head>
 <body>
-    <!-- Navigation & Controls -->
+    <!-- Home -->
     <a href="../index.html" class="home-btn">🏠 ទំព័រដើម</a>
 
+    <!-- Navigation Controls: Cover, Spin, Back -->
+    <div class="nav-controls">
+        <button class="nav-btn" id="goCoverBtn">📖 គម្រប</button>
+        <button class="nav-btn spin-btn" id="spinBtn">🔄 បង្វិល</button>
+        <button class="nav-btn" id="goBackBtn">📚 គម្របខាងក្រោយ</button>
+    </div>
+
+    <!-- Mode Selector -->
     <div class="mode-select-wrap">
         <label for="modeSelect">របៀបបង្ហាញ</label>
         <select id="modeSelect">
@@ -574,14 +631,14 @@
     <div class="flipbook-wrapper" id="wrapper">
         <div class="flipbook" id="flipbook">
 
-            <!-- SPREAD 0: FRONT COVER (left) + empty (right) -->
+            <!-- SPREAD 0: FRONT COVER + empty -->
             <div class="page page-left cover" data-page="0">
                 <h1 id="coverTitle">📖 ខ្ញុំអាចមើលឃើញ</h1>
                 <div class="sub" id="coverSub">✦ អូសដើម្បីស្វែងយល់ ✦</div>
             </div>
             <div class="page page-right empty-page" data-page="1"><span style="opacity:0.2;">·</span></div>
 
-            <!-- SPREAD 1: empty + title page -->
+            <!-- SPREAD 1: empty + title -->
             <div class="page page-left empty-page" data-page="2"><span style="opacity:0.3;">⋆</span></div>
             <div class="page page-right" data-page="3">
                 <div class="page-title" id="titlePage">ខ្ញុំ អាច មើល ឃើញ</div>
@@ -728,7 +785,7 @@
                 <div class="sub" id="backSub">✦ អរគុណ ✦</div>
             </div>
 
-            <!-- Touch Zones for page turning -->
+            <!-- Touch Zones -->
             <div class="touch-zones-container">
                 <div class="touch-zone touch-left" id="touchLeft"></div>
                 <div class="touch-zone touch-right" id="touchRight"></div>
@@ -740,7 +797,7 @@
     <script>
         (function() {
             // ============================================================
-            //  MODE SELECTION (word-cover, image-cover, normal)
+            //  MODE SELECTION
             // ============================================================
             const modeSelect = document.getElementById('modeSelect');
             const wordCovers = document.querySelectorAll('.word-cover');
@@ -749,7 +806,6 @@
             const hiddenEmojis = document.querySelectorAll('.hidden-emoji');
 
             function setMode(mode) {
-                // Hide all covers and reveal all content by default
                 wordCovers.forEach(cover => cover.style.display = 'none');
                 emojiCovers.forEach(cover => cover.style.display = 'none');
                 hiddenWords.forEach(word => word.style.opacity = '1');
@@ -762,25 +818,26 @@
                     emojiCovers.forEach(cover => cover.style.display = 'flex');
                     hiddenEmojis.forEach(emoji => emoji.style.opacity = '0.3');
                 }
-                // 'normal' mode leaves everything revealed
             }
 
             modeSelect.addEventListener('change', function() { setMode(this.value); });
             setMode(modeSelect.value);
 
             // ============================================================
-            //  FLIPBOOK CORE (page turning, state, indicators)
+            //  FLIPBOOK CORE
             // ============================================================
             const pageIndicator = document.getElementById('pageIndicator');
             const wrapper = document.getElementById('wrapper');
             const pages = document.querySelectorAll('.page');
             const touchLeft = document.getElementById('touchLeft');
             const touchRight = document.getElementById('touchRight');
+            const flipbookEl = document.getElementById('flipbook');
 
             const TOTAL_PAGES = pages.length;
             const SPREADS = TOTAL_PAGES / 2;
             let currentSpread = 0;
             let isFlipping = false;
+            let isSpinning = false;
 
             const spreadLabels = [
                 'គម្របខាងមុខ', 'ទំព័រចំណងជើង', 'ផ្កា', 'ឆ្កែ',
@@ -788,7 +845,7 @@
             ];
 
             // ============================================================
-            //  DRAG SYSTEM (drag-to-reveal for words & emojis)
+            //  DRAG SYSTEM
             // ============================================================
             const dragInstances = [];
 
@@ -830,7 +887,7 @@
                 }
 
                 function onDragStart(e) {
-                    if (isFlipping) return;
+                    if (isFlipping || isSpinning) return;
                     const touch = e.touches ? e.touches[0] : e;
                     isDragging = true;
                     dragStartX = touch.clientX;
@@ -906,10 +963,9 @@
             });
 
             // ============================================================
-            //  PAGE TURNING LOGIC
+            //  PAGE TURNING
             // ============================================================
             const FLIP_MS = 700;
-            const flipbookEl = document.getElementById('flipbook');
 
             function updateFlip() {
                 pages.forEach(page => {
@@ -945,7 +1001,6 @@
                 const frontEmpty = document.querySelector('.page[data-page="1"]');
                 const backEmpty = document.querySelector('.page[data-page="16"]');
 
-                // Show only the cover or back cover as a single page (closed book look)
                 if (currentSpread === 0) {
                     if (frontEmpty) frontEmpty.style.display = 'none';
                     flipbookEl.classList.add('cover-only');
@@ -980,12 +1035,12 @@
                 if (!el) return;
                 el.style.zIndex = 500;
                 el.style.animation = 'none';
-                void el.offsetWidth; // force reflow
+                void el.offsetWidth;
                 el.style.animation = `${name} ${FLIP_MS}ms cubic-bezier(0.45, 0.05, 0.55, 0.95) both`;
             }
 
             function goToSpread(spreadIndex) {
-                if (isFlipping) return;
+                if (isFlipping || isSpinning) return;
                 if (spreadIndex < 0 || spreadIndex >= SPREADS || spreadIndex === currentSpread) return;
                 isFlipping = true;
 
@@ -1007,21 +1062,52 @@
                 }, FLIP_MS);
             }
 
-            // --- Event Listeners for page turning ---
+            // ============================================================
+            //  SPIN ANIMATION (3D book rotation)
+            // ============================================================
+            function spinBook() {
+                if (isFlipping || isSpinning) return;
+                isSpinning = true;
+
+                // Store current spread to return to it
+                const targetSpread = currentSpread;
+
+                // Apply a 3D rotation to the entire book
+                flipbookEl.style.transition = 'transform 1.2s cubic-bezier(0.23, 1, 0.32, 1)';
+                flipbookEl.style.transform = 'rotateY(180deg)';
+
+                setTimeout(() => {
+                    // Reset rotation
+                    flipbookEl.style.transition = 'transform 0.8s cubic-bezier(0.23, 1, 0.32, 1)';
+                    flipbookEl.style.transform = 'rotateY(0deg)';
+
+                    // Re-apply cover/back centering after spin
+                    setTimeout(() => {
+                        isSpinning = false;
+                        updateFlip();
+                    }, 800);
+                }, 1200);
+            }
+
+            // ============================================================
+            //  EVENT LISTENERS
+            // ============================================================
+            // Page turning
             touchLeft.addEventListener('click', function(e) {
-                if (isFlipping) return;
+                if (isFlipping || isSpinning) return;
                 if (currentSpread > 0) goToSpread(currentSpread - 1);
                 e.stopPropagation();
             });
 
             touchRight.addEventListener('click', function(e) {
-                if (isFlipping) return;
+                if (isFlipping || isSpinning) return;
                 if (currentSpread < SPREADS - 1) goToSpread(currentSpread + 1);
                 e.stopPropagation();
             });
 
+            // Keyboard
             document.addEventListener('keydown', function(e) {
-                if (isFlipping) return;
+                if (isFlipping || isSpinning) return;
                 if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
                     if (currentSpread > 0) goToSpread(currentSpread - 1);
                 } else if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
@@ -1030,13 +1116,31 @@
                 }
             });
 
+            // Navigation buttons
+            document.getElementById('goCoverBtn').addEventListener('click', function() {
+                if (isFlipping || isSpinning) return;
+                goToSpread(0);
+            });
+
+            document.getElementById('goBackBtn').addEventListener('click', function() {
+                if (isFlipping || isSpinning) return;
+                goToSpread(SPREADS - 1);
+            });
+
+            document.getElementById('spinBtn').addEventListener('click', function() {
+                spinBook();
+            });
+
             wrapper.addEventListener('contextmenu', (e) => e.preventDefault());
 
+            // Resize handler
             function handleResize() { updateFlip(); }
             window.addEventListener('resize', handleResize);
             window.addEventListener('orientationchange', function() { setTimeout(handleResize, 300); });
 
-            // Initialize the book
+            // ============================================================
+            //  INIT
+            // ============================================================
             updateFlip();
         })();
     </script>
