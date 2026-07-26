@@ -343,6 +343,10 @@
         <option value="2.svg">សូរស្រៈប្រើជាមួយពួក អ</option>
         <option value="3.svg">សូរស្រៈប្រើជាមួយពួក អ៊</option>
       </select>
+      <button id="cameraBtn" class="text-btn" title="Take a photo with your camera">📷 ថតរូប</button>
+      <button id="uploadBtn" class="text-btn" title="Upload a photo from your device">🖼️ ផ្ទុករូបភាព</button>
+      <input id="cameraInput" type="file" accept="image/*" capture="environment" style="display:none;">
+      <input id="uploadInput" type="file" accept="image/*" style="display:none;">
     </div>
 
     <div id="drawBar" class="sub-bar" style="display:none;">
@@ -679,6 +683,26 @@
     previewImage.style.display = 'none';
     imagePlaceholder.style.display = 'block';
   }
+
+  // ---- Camera capture / photo upload: replaces the reference image with a user-supplied photo ----
+  const cameraBtn = document.getElementById('cameraBtn');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const cameraInput = document.getElementById('cameraInput');
+  const uploadInput = document.getElementById('uploadInput');
+  let userPhotoUrl = null;
+
+  function handleUserPhoto(file){
+    if(!file) return;
+    if(userPhotoUrl) URL.revokeObjectURL(userPhotoUrl);
+    userPhotoUrl = URL.createObjectURL(file);
+    previewImage.src = userPhotoUrl;
+    previewImage.alt = 'Uploaded photo';
+  }
+
+  cameraBtn.addEventListener('click', () => cameraInput.click());
+  uploadBtn.addEventListener('click', () => uploadInput.click());
+  cameraInput.addEventListener('change', e => handleUserPhoto(e.target.files[0]));
+  uploadInput.addEventListener('change', e => handleUserPhoto(e.target.files[0]));
 
   document.querySelectorAll('.tool-btn[data-mode]').forEach(btn => {
     btn.addEventListener('click', () => setMode(btn.dataset.mode));
