@@ -590,14 +590,14 @@
                 <div class="sub" id="coverSub">✦ អូសដើម្បីស្វែងយល់ ✦</div>
             </div>
 
-            <!-- SPREAD 1: Title page (left) + empty (right) -->
-            <div class="page page-left" data-page="1">
+            <!-- SPREAD 1: Empty (left) + Title page (right) -->
+            <div class="page page-left empty-page" data-page="1"><span style="opacity:0.2;">·</span></div>
+            <div class="page page-right" data-page="2">
                 <div class="page-title" id="titlePage">ខ្ញុំ អាច មើល ឃើញ</div>
                 <div style="font-size:clamp(1.8rem, 4.5vw, 3rem); margin-top:0.1rem;" id="titleEmoji">👁️</div>
             </div>
-            <div class="page page-right empty-page" data-page="2"><span style="opacity:0.3;">⋆</span></div>
 
-            <!-- SPREAD 2: New intro page (left) + empty (right) -->
+            <!-- SPREAD 2: Welcome (left) + empty (right) -->
             <div class="page page-left" data-page="3">
                 <div style="font-size: clamp(1.2rem, 2.5vw, 1.8rem); color: #2b4a5c; font-weight: 400; line-height: 1.6; padding: 0 0.5rem;">
                     <div style="font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 0.3rem;">🌟</div>
@@ -794,9 +794,9 @@
             const touchRight = document.getElementById('touchRight');
             const flipbookEl = document.getElementById('flipbook');
 
-            // Pages: 0=cover, 1-2=title spread, 3-4=intro spread, 5-6=flower, 7-8=dog, 9-10=cat, 11-12=car, 13-14=tree, 15-16=sun, 17=back
+            // Pages: 0=cover, 1-2=title spread (empty+title), 3-4=welcome spread, 5-6=flower, 7-8=dog, 9-10=cat, 11-12=car, 13-14=tree, 15-16=sun, 17=back
             const TOTAL_PAGES = 18;
-            const SPREADS = 10; // 0:cover, 1:title, 2:intro, 3:flower, 4:dog, 5:cat, 6:car, 7:tree, 8:sun, 9:back
+            const SPREADS = 10; // 0:cover, 1:title, 2:welcome, 3:flower, 4:dog, 5:cat, 6:car, 7:tree, 8:sun, 9:back
             let currentSpread = 0;
             let isFlipping = false;
 
