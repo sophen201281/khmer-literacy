@@ -1,1 +1,439 @@
-a
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Weekly Flashcards · 37 Weeks</title>
+  <!-- Google Font: Battambang (Khmer) -->
+  <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@100;300;400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --card-font-size: 28px;
+      --panel-bg: #1f2e3a;
+      --panel-text: #f0ede5;
+      --accent: #4a6cf7;
+      --radius: 14px;
+      --content-max: 340px;
+    }
+    *{ box-sizing:border-box; margin:0; padding:0; }
+    html{ -webkit-text-size-adjust:100%; }
+    body{
+      font-family: 'Battambang', 'Segoe UI', Roboto, system-ui, sans-serif;
+      background:#eef3ff;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:20px 12px 30px;
+      min-height:100vh;
+      width:100%;
+      overflow-x:hidden;
+    }
+    h2{
+      margin-bottom:6px;
+      font-weight:400;
+      color:#1f2e3a;
+      letter-spacing:1px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+      font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
+      font-size: clamp(18px, 4vw, 24px);
+      text-align:center;
+    }
+    .week-selector{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin-bottom:14px;
+      width:100%;
+      max-width:var(--content-max);
+      justify-content:center;
+      background:white;
+      padding:6px 14px;
+      border-radius:40px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.04);
+      font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
+    }
+    .week-selector label{
+      font-size:14px;
+      color:#445566;
+      font-weight:500;
+      white-space:nowrap;
+      font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
+    }
+    .week-selector select{
+      padding:8px 14px;
+      border:1px solid #ccd7e6;
+      border-radius:30px;
+      background:white;
+      font-size:15px;
+      font-weight:500;
+      color:#1f2e3a;
+      cursor:pointer;
+      outline:none;
+      transition:border .2s;
+      flex:1;
+      max-width:220px;
+      min-width:0;
+      appearance:auto;
+      font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
+    }
+    .week-selector select:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(74,108,247,0.12);
+    }
+    .stack{
+      position:relative;
+      width:100%;
+      max-width:var(--content-max);
+      height:min(240px, 45vh);
+      min-height:180px;
+      perspective:1400px;
+      margin-bottom:10px;
+    }
+    .card{
+      position:absolute;
+      width:100%;
+      height:100%;
+      transition:opacity .3s;
+      cursor:pointer;
+      user-select:none;
+    }
+    .card.hidden{ opacity:0; pointer-events:none; }
+    .face{
+      position:absolute;
+      width:100%;
+      height:100%;
+      border-radius:var(--radius);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:var(--card-font-size);
+      box-shadow:0 10px 25px rgba(0,0,0,.12);
+      background:white;
+      padding:20px;
+    }
+    .text{
+      position:relative;
+      z-index:2;
+      text-align:center;
+      padding:4px;
+      word-break:break-word;
+      max-width:90%;
+      line-height:1.3;
+      font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
+    }
+    .card::before, .card::after{
+      position:absolute;
+      top:0;
+      width:20%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:22px;
+      color:rgba(0,0,0,.10);
+      pointer-events:none;
+      z-index:3;
+      font-weight:300;
+      font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
+    }
+    .card::before{ content:"◀"; left:0; }
+    .card::after{ content:"▶"; right:0; }
+
+    .bottom-controls{
+      width:100%;
+      max-width:var(--content-max);
+      margin-top:4px;
+    }
+    .font-control{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:12px;
+      background:white;
+      padding:8px 14px;
+      border-radius:40px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.04);
+      justify-content:center;
+      font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
+    }
+    .font-control label{
+      font-size:14px;
+      color:#445566;
+      font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
+    }
+    .font-control input[type="range"]{
+      flex:1;
+      accent-color:var(--accent);
+      min-width:0;
+    }
+    .nav{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .nav button{
+      padding:10px 16px;
+      border:none;
+      background:white;
+      color:#1f2e3a;
+      border-radius:40px;
+      cursor:pointer;
+      font-weight:500;
+      font-size:14px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.04);
+      transition:all .2s;
+      border:1px solid transparent;
+      flex:1 1 auto;
+      min-width:90px;
+      font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
+    }
+    .nav button:hover{
+      background:#f0f4ff;
+      border-color:#ccd7e6;
+      transform:translateY(-1px);
+    }
+    .nav button:active{ transform:scale(0.96); }
+    .homeBtn{
+      background:#eef3ff;
+    }
+    .empty{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100%;
+      color:#8899aa;
+      font-size:18px;
+      font-style:italic;
+      font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* ---- RESPONSIVE BREAKPOINTS ---- */
+
+    /* Small phones */
+    @media (max-width: 360px){
+      :root{ --content-max: 100%; }
+      body{ padding:14px 8px 24px; }
+      .stack{ height:min(200px, 40vh); }
+      .nav button{ padding:9px 10px; font-size:13px; min-width:80px; }
+    }
+
+    /* Tablets and up */
+    @media (min-width: 640px){
+      :root{ --content-max: 460px; }
+      .stack{ height:280px; }
+    }
+
+    /* Desktops / large screens */
+    @media (min-width: 1024px){
+      :root{ --content-max: 520px; }
+      body{ padding:40px 12px 40px; }
+      .stack{ height:320px; }
+      h2{ font-size:28px; }
+    }
+
+    /* Landscape phones (short viewport height) */
+    @media (max-height: 480px) and (orientation: landscape){
+      body{ padding:10px 12px 14px; }
+      h2{ margin-bottom:4px; font-size:16px; }
+      .stack{ height:min(160px, 55vh); margin-bottom:6px; }
+      .week-selector{ margin-bottom:8px; }
+      .font-control{ margin-bottom:8px; }
+    }
+
+    /* Fine pointer / hover-capable devices get a touch more breathing room */
+    @media (hover: hover) and (pointer: fine){
+      .stack{ cursor:pointer; }
+    }
+  </style>
+</head>
+<body>
+
+<h2>
+  <span>📚 បណ្ណពាក្យថ្នាក់ទី៣</span>
+  <span style="font-size:16px;font-weight:300;color:#667;font-family:'Battambang','Segoe UI',system-ui,sans-serif;" id="weekDisplay">សប្តាហ៍ទី 1</span>
+</h2>
+
+<div class="week-selector">
+  <label for="weekDropdown">📅 សប្តាហ៍:</label>
+  <select id="weekDropdown"></select>
+</div>
+
+<div class="stack" id="stack"></div>
+
+<div class="bottom-controls">
+  <div class="font-control">
+    <label>🔤 ទំហំ</label>
+    <input type="range" min="16" max="100" value="28" oninput="changeFontSize(this.value)">
+    <span id="fontSizeLabel" style="min-width:32px;font-size:14px;font-family:'Battambang','Segoe UI',system-ui,sans-serif;">28</span>
+  </div>
+
+  <div class="nav">
+    <button onclick="randomCard()">🎲 ក្រឡុក</button>
+    <button onclick="window.location.href='../index.html'" class="homeBtn">🏡 Home</button>
+  </div>
+</div>
+
+<script>
+  // ============ DATA ============
+  const WEEK_COUNT = 37;
+
+  // Generate the word list for all 37 weeks, in correct week order (index 0 = Week 1).
+  function generateSampleWords() {
+    return [
+      ['ពាក្យប្រើញឹកញាប់'],                                            // Week 1
+      ['ខ្ញុំ', 'អាច', 'មើល', 'ឃើញ', 'របស់'],                          // Week 2
+      ['យើង', 'ចេះ', 'មួយ', 'ពេលណា', 'នឹង'],                          // Week 3
+      ['កូន', 'ស្រឡាញ់', 'ពណ៌'],                                       // Week 4
+      ['ធំ', 'តូច', 'ហើយ'],                                            // Week 5
+      ['ចូលចិត្ត', 'លេង'],                                             // Week 6
+      ['ខាង', 'ក្រៅ', 'ទៅ', 'វា'],                                     // Week 7
+      ['តើ', 'អ្វី'],                                                  // Week 8
+      ['អាហារ', 'ទាំង', 'អស់', 'មែន'],                                 // Week 9
+      ['ធ្វើ', 'ដែរ', 'ឬ', 'ទេ', 'ឱ្យ', 'មិន', 'ល្អ'],                 // Week 10
+      ['ក្នុង', 'សៀវភៅ'],                                              // Week 11
+      ['ដោយ', 'វែង', 'ខ្លាំង', 'ថ្មី', 'ចាស់'],                        // Week 12
+      ['រត់', 'ចុះ', 'ឡើង', 'ជួប', 'មុខ'],                             // Week 13
+      ['ចង់'],                                                          // Week 14
+      ['នេះ', 'ជា'],                                                    // Week 15
+      ['បី', 'បាន', 'នាំ', 'គ្នា', 'តាម', 'ខំ', 'នៅ', 'កុមារ'],        // Week 16
+      ['និង', 'ឪពុក', 'និយាយ', 'គឺ', 'លើ', 'ផ្ទះ', 'ដេក'],             // Week 17
+      ['តា', 'ទិញ', 'គាត់', 'ជាមួយ', 'អាន'],                           // Week 18
+      ['មក', 'ដល់', 'ឯណា'],                                            // Week 19
+      ['សាលា', 'ម៉ែ', 'ធំ', 'ណាស់', 'បង', 'ប្រុស', 'សុំ'],             // Week 20
+      ['ធ្មេញ', 'ដុស', 'ស្អាត', 'ក្រៅ', 'ក្នុង', 'ឆ្វេង', 'ស្តាំ', 'ឱប'], // Week 21
+      ['នរណា', 'ជួយ', 'រូប', 'ពុក', 'សរសេរ', 'រឿង'],                   // Week 22
+      ['ផ្ទះ', 'វង្វេង', 'ឆ្លើយ', 'តប', 'អរគុណ'],                      // Week 23
+      ['ពូ'],                                                           // Week 24
+      ['ក្មេង', 'ប៉ុន្តែ', 'រៀន'],                                     // Week 25
+      ['មិត្ត', 'នោះ', 'រក'],                                          // Week 26
+      ['ក្រោយ', 'ថា'],                                                 // Week 27
+      ['គេ', 'មនុស្ស', 'ដើរ', 'ឮ'],                                    // Week 28
+      ['ថ្ងៃ', 'អាទិត្យ', 'ព្រឹក', 'ញ៉ាំ', 'ប្អូន', 'ស្រី'],           // Week 29
+      ['បន្លែ', 'ចម្អិន', 'ស្ងួត', 'បង្អែម', 'ស្លាបព្រា', 'គ្រឿង'],    // Week 30
+      ['លើក', 'បន្តិច', 'ប្រាប់'],                                     // Week 31
+      ['ងូត', 'ទឹក', 'ដាក់', 'កុំ', 'កំពុង'],                          // Week 32
+      ['ឈឺ', 'ដៃ', 'ឥឡូវ', 'ជើង'],                                     // Week 33
+      ['ខែ', 'ជិះ', 'មេសា', 'ឈប់', 'ក្រោម'],                           // Week 34
+      ['រំលឹកពាក្យដែលរៀនហើយ'],                                         // Week 35
+      ['រំលឹកពាក្យដែលរៀនហើយ'],                                         // Week 36
+      ['រំលឹកពាក្យដែលរៀនហើយ'],                                         // Week 37
+    ];
+  }
+
+  let weeksData = generateSampleWords();
+  let currentWeek = 0;
+  let cards = [];
+  let current = 0;
+
+  // ============ LOAD WEEK ============
+  function loadWeek(weekIndex) {
+    currentWeek = weekIndex;
+    const words = weeksData[weekIndex] || [];
+    cards = words.map(text => ({ text }));
+    current = 0;
+    renderCards();
+    updateWeekUI();
+    document.getElementById('weekDisplay').textContent = `សប្តាហ៍ទី ${weekIndex+1}`;
+    // update dropdown
+    document.getElementById('weekDropdown').value = weekIndex;
+  }
+
+  // ============ RENDER ============
+  function renderCards(){
+    const stack = document.getElementById("stack");
+    stack.innerHTML = "";
+    if(cards.length === 0){
+      stack.innerHTML = `<div class="empty">មិនមានបណ្ណពាក្យ</div>`;
+      return;
+    }
+    const c = cards[current];
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="face">
+        <div class="text">${c.text}</div>
+      </div>
+    `;
+    let startX = 0;
+    card.addEventListener("touchstart",(e)=>{
+      startX = e.touches[0].clientX;
+    },{passive:true});
+    card.addEventListener("touchend",(e)=>{
+      const endX = e.changedTouches[0].clientX;
+      const diff = endX - startX;
+      const rect = card.getBoundingClientRect();
+      const x = endX - rect.left;
+      const w = rect.width;
+      if(Math.abs(diff) > 60){
+        if(diff > 0) prev();
+        else next();
+        return;
+      }
+      if(x < w*0.2) prev();
+      else if(x > w*0.8) next();
+    },{passive:true});
+    card.addEventListener("click",(e)=>{
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const w = rect.width;
+      if(x < w*0.2) prev();
+      else if(x > w*0.8) next();
+    });
+    stack.appendChild(card);
+  }
+
+  // ============ CARD OPERATIONS ============
+  function randomCard(){
+    if(cards.length < 2) return;
+    let r;
+    do{ r = Math.floor(Math.random()*cards.length); }while(r === current);
+    current = r;
+    renderCards();
+  }
+
+  function next(){
+    if(current < cards.length-1){ current++; renderCards(); }
+  }
+  function prev(){
+    if(current > 0){ current--; renderCards(); }
+  }
+
+  function changeFontSize(v){
+    document.documentElement.style.setProperty("--card-font-size", v+"px");
+    document.getElementById("fontSizeLabel").textContent = v;
+  }
+
+  // ============ WEEK UI ============
+  function updateWeekUI() {
+    const dropdown = document.getElementById('weekDropdown');
+    dropdown.innerHTML = '';
+    for (let i = 0; i < WEEK_COUNT; i++) {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = `សប្តាហ៍ ${i+1}`;
+      dropdown.appendChild(option);
+    }
+    dropdown.value = currentWeek;
+    dropdown.addEventListener('change', function() {
+      loadWeek(parseInt(this.value));
+    });
+  }
+
+  // ============ INIT ============
+  loadWeek(0);
+  updateWeekUI();
+
+  window.randomCard = randomCard;
+  window.next = next;
+  window.prev = prev;
+  window.changeFontSize = changeFontSize;
+  window.loadWeek = loadWeek;
+</script>
+
+</body>
+</html>
