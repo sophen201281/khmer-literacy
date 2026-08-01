@@ -48,13 +48,13 @@
   }
   .cell:hover {
     transform: scale(1.08);
-    background-color: #3d3d5c;
-    box-shadow: 0 0 12px rgba(255,255,255,0.5);
+    background-color: transparent;
+    box-shadow: 0 0 12px rgba(0,0,0,0.3);
     z-index: 2;
   }
   .cell.pressed {
     transform: scale(0.95);
-    background-color: #565685;
+    background-color: #e0e0e0;
   }
 
   /* Extra-small phones: stack tighter, slightly smaller radius/gaps */
@@ -84,16 +84,48 @@
       width: 500px;
     }
   }
+
+  #muteBtn {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid #555;
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    z-index: 10;
+  }
+  #muteBtn:hover {
+    transform: scale(1.08);
+  }
 </style>
 </head>
 <body>
 
+<button id="muteBtn" aria-label="Mute sounds">🔊</button>
 <div id="letterGrid"></div>
 
 <script>
   const COLS = 5;
   const ROWS = 7;
   const grid = document.getElementById('letterGrid');
+  const muteBtn = document.getElementById('muteBtn');
+
+  let isMuted = false;
+  muteBtn.addEventListener('click', () => {
+    isMuted = !isMuted;
+    muteBtn.textContent = isMuted ? '🔇' : '🔊';
+    muteBtn.setAttribute('aria-label', isMuted ? 'Unmute sounds' : 'Mute sounds');
+  });
 
   // Change these filenames/extensions to match what's in your folders
   // Example: images/img1.jpg, images/img2.jpg ... sounds/click1.mp3, sounds/click2.mp3 ...
@@ -113,8 +145,10 @@
 
       // Play sound on click/tap, e.g. sounds/click1.mp3, sounds/click2.mp3, ...
       const activate = () => {
-        const audio = new Audio(`${SOUND_FOLDER}click${cellNumber}${SOUND_EXT}`);
-        audio.play().catch(err => console.log('Could not play sound:', err));
+        if (!isMuted) {
+          const audio = new Audio(`${SOUND_FOLDER}click${cellNumber}${SOUND_EXT}`);
+          audio.play().catch(err => console.log('Could not play sound:', err));
+        }
 
         cell.classList.add('pressed');
         setTimeout(() => cell.classList.remove('pressed'), 150);
