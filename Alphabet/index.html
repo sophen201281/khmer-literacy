@@ -14,7 +14,7 @@
   }
   body {
     font-family: Arial, sans-serif;
-    background: #1e1e2f;
+    background: #ffffff;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -55,10 +55,6 @@
   .cell.pressed {
     transform: scale(0.95);
     background-color: #565685;
-  }
-  .cell span {
-    text-shadow: 0 0 4px black, 0 0 4px black;
-    pointer-events: none;
   }
 
   /* Extra-small phones: stack tighter, slightly smaller radius/gaps */
@@ -106,22 +102,11 @@
   const IMAGE_EXT = '.png';
   const SOUND_EXT = '.mp3';
 
-  let letterIndex = 0;
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const cell = document.createElement('div');
       cell.className = 'cell';
       const cellNumber = r * COLS + c + 1; // 1..35, used to pick image/sound file
-
-      // Letter (cycles through A-Z, repeating if more than 26 cells)
-      const letter = letters[letterIndex % letters.length];
-      letterIndex++;
-
-      const span = document.createElement('span');
-      span.textContent = letter;
-      cell.appendChild(span);
 
       // Background image — e.g. images/img1.jpg, images/img2.jpg, ...
       cell.style.backgroundImage = `url('${IMAGE_FOLDER}img${cellNumber}${IMAGE_EXT}')`;
