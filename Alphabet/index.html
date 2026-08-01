@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Interactive Letter Table</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    font-family: Arial, sans-serif;
+    background: #1e1e2f;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: clamp(10px, 3vw, 40px);
+  }
+  #letterGrid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(7, 1fr);
+    gap: clamp(4px, 1vw, 10px);
+    width: min(92vw, 500px);
+    aspect-ratio: 5 / 7;
+  }
+  .cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #555;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    background-color: #2b2b40;
+    color: white;
+    font-weight: bold;
+    font-size: clamp(14px, 4vw, 24px);
+    transition: transform 0.15s ease, background-color 0.15s ease;
+    background-size: cover;
+    background-position: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .cell:hover {
+    transform: scale(1.08);
+    background-color: #3d3d5c;
+    box-shadow: 0 0 12px rgba(255,255,255,0.5);
+    z-index: 2;
+  }
+  .cell.pressed {
+    transform: scale(0.95);
+    background-color: #565685;
+  }
+  .cell span {
+    text-shadow: 0 0 4px black, 0 0 4px black;
+    pointer-events: none;
+  }
+
+  /* Extra-small phones: stack tighter, slightly smaller radius/gaps */
+  @media (max-width: 380px) {
+    #letterGrid {
+      width: 95vw;
+      gap: 3px;
+    }
+    .cell {
+      border-radius: 4px;
+      border-width: 1px;
+    }
+  }
+
+  /* Landscape phones / short viewports: shrink height instead of width */
+  @media (max-height: 500px) {
+    #letterGrid {
+      width: auto;
+      height: 90vh;
+      aspect-ratio: 5 / 7;
+    }
+  }
+
+  /* Larger screens: cap max size so cells don't get huge */
+  @media (min-width: 900px) {
+    #letterGrid {
+      width: 500px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="letterGrid"></div>
+
+<script>
+  const COLS = 5;
+  const ROWS = 7;
+  const grid = document.getElementById('letterGrid');
+
+  // Change these filenames/extensions to match what's in your folders
+  // Example: images/img1.jpg, images/img2.jpg ... sounds/click1.mp3, sounds/click2.mp3 ...
+  const IMAGE_FOLDER = 'images/';
+  const SOUND_FOLDER = 'sounds/';
+  const IMAGE_EXT = '.jpg';
+  const SOUND_EXT = '.mp3';
+
+  let letterIndex = 0;
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      const cellNumber = r * COLS + c + 1; // 1..35, used to pick image/sound file
+
+      // Letter (cycles through A-Z, repeating if more than 26 cells)
+      const letter = letters[letterIndex % letters.length];
+      letterIndex++;
+
+      const span = document.createElement('span');
+      span.textContent = letter;
+      cell.appendChild(span);
+
+      // Background image — e.g. images/img1.jpg, images/img2.jpg, ...
+      cell.style.backgroundImage = `url('${IMAGE_FOLDER}img${cellNumber}${IMAGE_EXT}')`;
+
+      // Play sound on click/tap, e.g. sounds/click1.mp3, sounds/click2.mp3, ...
+      const activate = () => {
+        const audio = new Audio(`${SOUND_FOLDER}click${cellNumber}${SOUND_EXT}`);
+        audio.play().catch(err => console.log('Could not play sound:', err));
+
+        cell.classList.add('pressed');
+        setTimeout(() => cell.classList.remove('pressed'), 150);
+      };
+      cell.addEventListener('click', activate);
+
+      grid.appendChild(cell);
+    }
+  }
+</script>
+
+</body>
+</html>
