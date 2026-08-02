@@ -11,6 +11,7 @@
   html, body {
     height: 100%;
     margin: 0;
+    overflow: hidden;
   }
   body {
     font-family: 'Khmer OS', 'Khmer OS Battambang', Arial, sans-serif;
@@ -19,31 +20,37 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: clamp(10px, 3vw, 40px);
+    padding: clamp(8px, 2.5vh, 40px) clamp(10px, 3vw, 40px);
     -webkit-user-select: none;
     user-select: none;
   }
 
   #title {
-    font-size: clamp(20px, 6vw, 34px);
+    font-size: clamp(16px, min(5vw, 5vh), 34px);
     font-weight: bold;
     color: #333;
-    margin-bottom: clamp(8px, 2vw, 16px);
+    margin-bottom: clamp(6px, 1.5vh, 16px);
     text-align: center;
+    flex-shrink: 0;
   }
 
   #boardWrap {
     position: relative;
-    width: min(92vw, 500px);
+    /* Fits by whichever dimension is tighter — width or height —
+       so the 5:7 board always fits fully on screen in portrait,
+       landscape, tablets, or desktops without ever overflowing. */
+    width: min(92vw, calc((100vh - 120px) * 5 / 7), 500px);
+    aspect-ratio: 5 / 7;
+    flex-shrink: 0;
   }
 
   #letterGrid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     grid-template-rows: repeat(7, 1fr);
-    gap: clamp(4px, 1vw, 10px);
+    gap: clamp(3px, 1vw, 10px);
     width: 100%;
-    aspect-ratio: 5 / 7;
+    height: 100%;
   }
   .cell {
     display: flex;
@@ -56,7 +63,7 @@
     background-color: #ffffff;
     color: white;
     font-weight: bold;
-    font-size: clamp(14px, 4vw, 24px);
+    font-size: clamp(11px, min(3.5vw, 3.5vh), 24px);
     transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
     background-size: cover;
     background-position: center;
@@ -79,34 +86,19 @@
     background-color: rgba(46, 204, 113, 0.15);
   }
 
-  /* Extra-small phones: stack tighter, slightly smaller radius/gaps */
+  /* While actively dragging, suppress the hover pop-out on cells so the
+     board stays visually still and the drag reads as smooth */
+  body.dragging-active .cell:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: #555;
+  }
+
+  /* Extra-small phones: tighter radius/border */
   @media (max-width: 380px) {
-    #letterGrid {
-      gap: 3px;
-    }
     .cell {
       border-radius: 4px;
       border-width: 1px;
-    }
-  }
-
-  /* Landscape phones / short viewports: shrink height instead of width */
-  @media (max-height: 500px) {
-    #boardWrap {
-      width: auto;
-      height: 80vh;
-    }
-    #letterGrid {
-      width: auto;
-      height: 100%;
-      aspect-ratio: 5 / 7;
-    }
-  }
-
-  /* Larger screens: cap max size so cells don't get huge */
-  @media (min-width: 900px) {
-    #boardWrap {
-      width: 500px;
     }
   }
 
@@ -255,8 +247,13 @@
 
   /* ---------- Draggable target marker: can be moved onto any cell ---------- */
   let dragging = false;
-  let offsetX = 0;
-  let offsetY = 0;
+  let startLeft = 0;
+  let startTop = 0;
+  let startPointerX = 0;
+  let startPointerY = 0;
+  let lastPointerX = 0;
+  let lastPointerY = 0;
+  let rafPending = false;
   let currentDragOverCell = null;
 
   function getCellUnderPoint(x, y) {
@@ -276,28 +273,41 @@
 
   function startDrag(clientX, clientY) {
     dragging = true;
+    document.body.classList.add('dragging-active');
     targetMarker.classList.add('dragging');
     const rect = targetMarker.getBoundingClientRect();
-    offsetX = clientX - rect.left;
-    offsetY = clientY - rect.top;
 
-    // Switch to fixed positioning so it can move freely over the grid
+    // Remember the marker's starting screen position, then move it purely
+    // via CSS transform (translate) during the drag. transform is handled
+    // by the compositor, not layout, so it tracks the finger/cursor with
+    // no jank — unlike animating left/top which forces a reflow every frame.
+    startLeft = rect.left;
+    startTop = rect.top;
+    startPointerX = clientX;
+    startPointerY = clientY;
+    lastPointerX = clientX;
+    lastPointerY = clientY;
+
     targetMarker.style.position = 'fixed';
-    targetMarker.style.left = rect.left + 'px';
-    targetMarker.style.top = rect.top + 'px';
+    targetMarker.style.left = startLeft + 'px';
+    targetMarker.style.top = startTop + 'px';
     targetMarker.style.margin = '0';
     targetMarker.style.zIndex = '999';
+    targetMarker.style.willChange = 'transform';
+    targetMarker.style.transform = 'translate(0px, 0px)';
     document.body.appendChild(targetMarker); // ensure it's above everything
+
+    rafPending = false;
   }
 
-  function moveDrag(clientX, clientY) {
+  function applyMove() {
+    rafPending = false;
     if (!dragging) return;
-    const x = clientX - offsetX;
-    const y = clientY - offsetY;
-    targetMarker.style.left = x + 'px';
-    targetMarker.style.top = y + 'px';
+    const dx = lastPointerX - startPointerX;
+    const dy = lastPointerY - startPointerY;
+    targetMarker.style.transform = `translate(${dx}px, ${dy}px)`;
 
-    const cell = getCellUnderPoint(clientX, clientY);
+    const cell = getCellUnderPoint(lastPointerX, lastPointerY);
     if (cell !== currentDragOverCell) {
       clearDragOver();
       if (cell) {
@@ -307,10 +317,23 @@
     }
   }
 
+  function moveDrag(clientX, clientY) {
+    if (!dragging) return;
+    lastPointerX = clientX;
+    lastPointerY = clientY;
+    // Batch to one update per animation frame for buttery-smooth motion
+    if (!rafPending) {
+      rafPending = true;
+      requestAnimationFrame(applyMove);
+    }
+  }
+
   function endDrag(clientX, clientY) {
     if (!dragging) return;
     dragging = false;
+    document.body.classList.remove('dragging-active');
     targetMarker.classList.remove('dragging');
+    targetMarker.style.willChange = '';
 
     const cell = getCellUnderPoint(clientX, clientY);
     clearDragOver();
@@ -350,6 +373,7 @@
     targetMarker.style.margin = '';
     targetMarker.style.zIndex = '';
     targetMarker.style.transform = '';
+    targetMarker.style.willChange = '';
     boardWrap.appendChild(targetMarker);
   }
 
@@ -375,7 +399,9 @@
   targetMarker.addEventListener('pointercancel', () => {
     if (!dragging) return;
     dragging = false;
+    document.body.classList.remove('dragging-active');
     targetMarker.classList.remove('dragging');
+    targetMarker.style.willChange = '';
     clearDragOver();
     returnToTray();
   });
