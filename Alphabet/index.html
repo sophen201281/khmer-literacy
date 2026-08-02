@@ -171,11 +171,11 @@
     z-index: 5;
     transition: box-shadow 0.15s ease;
 
-    /* Default resting spot: on the second half (lower rows) of the
-       grid, tucked at the right edge. All in %, so it re-lands in the
-       same relative spot on the board at any viewport size. */
+    /* Fallback resting spot before JS positions it exactly on cell 30
+       (row 6, column 5 — near the bottom-right of the grid). All in %,
+       so it lands in roughly the same relative spot at any screen size. */
     position: absolute;
-    top: 60%;
+    top: 79%;
     left: 96%;
     transform: translate(-50%, -50%);
   }
@@ -246,6 +246,8 @@
     }
   }
 
+  positionMarkerOnCell(30);
+
   /* ---------- Draggable target marker: can be moved onto any cell ---------- */
   let dragging = false;
   let startLeft = 0;
@@ -270,6 +272,30 @@
       currentDragOverCell.classList.remove('drag-over');
       currentDragOverCell = null;
     }
+  }
+
+  // Places the marker centered on a given cell number (1..35), using the
+  // same %-of-board math as a manual drop, so it lands correctly and stays
+  // correct on any screen size or orientation.
+  function positionMarkerOnCell(cellNumber) {
+    const cell = grid.querySelector(`.cell[data-cell-number="${cellNumber}"]`);
+    if (!cell) return;
+
+    const cellRect = cell.getBoundingClientRect();
+    const wrapRect = boardWrap.getBoundingClientRect();
+
+    const centerXPx = cellRect.left + cellRect.width / 2 - wrapRect.left;
+    const centerYPx = cellRect.top + cellRect.height / 2 - wrapRect.top;
+    const leftPct = (centerXPx / wrapRect.width) * 100;
+    const topPct = (centerYPx / wrapRect.height) * 100;
+
+    targetMarker.style.position = 'absolute';
+    targetMarker.style.left = leftPct + '%';
+    targetMarker.style.top = topPct + '%';
+    targetMarker.style.margin = '0';
+    targetMarker.style.zIndex = '5';
+    targetMarker.style.transform = 'translate(-50%, -50%)';
+    boardWrap.appendChild(targetMarker);
   }
 
   function startDrag(clientX, clientY) {
