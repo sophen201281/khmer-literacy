@@ -37,17 +37,21 @@
   #boardWrap {
     position: relative;
     /* Fits by whichever dimension is tighter — width or height —
-       so the 5:7 board always fits fully on screen in portrait,
-       landscape, tablets, or desktops without ever overflowing. */
-    width: min(92vw, calc((100vh - 120px) * 5 / 7), 500px);
-    aspect-ratio: 5 / 7;
+       so the board always fits fully on screen in portrait,
+       landscape, tablets, or desktops without ever overflowing.
+       --board-cols / --board-rows are set by JS depending on which
+       option is selected in the dropdown. */
+    --board-cols: 5;
+    --board-rows: 7;
+    width: min(92vw, calc((100vh - 150px) * var(--board-cols) / var(--board-rows)), 500px);
+    aspect-ratio: var(--board-cols) / var(--board-rows);
     flex-shrink: 0;
   }
 
   #letterGrid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: repeat(7, 1fr);
+    grid-template-columns: repeat(var(--board-cols), 1fr);
+    grid-template-rows: repeat(var(--board-rows), 1fr);
     gap: clamp(3px, 1vw, 10px);
     width: 100%;
     height: 100%;
@@ -183,6 +187,38 @@
     cursor: grabbing;
     box-shadow: 0 6px 16px rgba(0,0,0,0.4);
   }
+
+  #seriesSelectWrap {
+    margin-bottom: clamp(8px, 2vh, 18px);
+    flex-shrink: 0;
+  }
+  #seriesSelect {
+    font-family: inherit;
+    font-size: clamp(13px, 3.5vw, 16px);
+    font-weight: bold;
+    color: #333;
+    background-color: #ffffff;
+    border: 2px solid #555;
+    border-radius: 20px;
+    padding: 7px 34px 7px 16px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='3'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  #seriesSelect:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 12px rgba(184, 134, 11, 0.5);
+    border-color: #b8860b;
+  }
+  #seriesSelect:focus {
+    outline: none;
+    border-color: #b8860b;
+  }
   /* Brief settle animation applied only at the moment of drop, so the
      marker doesn't feel like it's snapping abruptly — but is never
      applied while actively tracking the pointer (that stays 1:1). */
@@ -200,6 +236,14 @@
 
 <div id="title"> ព្យព្ជានៈ</div>
 
+<div id="seriesSelectWrap">
+  <select id="seriesSelect" aria-label="Select table">
+    <option value="alphabet">អក្សរ (Alphabet)</option>
+    <option value="series1">ស៊េរីទី១ (First Series)</option>
+    <option value="series2">ស៊េរីទី២ (Second Series)</option>
+  </select>
+</div>
+
 <div id="boardWrap">
   <div id="letterGrid"></div>
   <div id="targetMarker" aria-label="Target marker, drag onto any cell">🎯</div>
@@ -207,12 +251,12 @@
 
 
 <script>
-  const COLS = 5;
-  const ROWS = 7;
   const grid = document.getElementById('letterGrid');
   const muteBtn = document.getElementById('muteBtn');
   const targetMarker = document.getElementById('targetMarker');
   const boardWrap = document.getElementById('boardWrap');
+  const titleEl = document.getElementById('title');
+  const seriesSelect = document.getElementById('seriesSelect');
 
   let isMuted = false;
   muteBtn.addEventListener('click', () => {
@@ -221,40 +265,106 @@
     muteBtn.setAttribute('aria-label', isMuted ? 'Unmute sounds' : 'Mute sounds');
   });
 
-  // Change these filenames/extensions to match what's in your folders
-  // Example: images/img1.jpg, images/img2.jpg ... sounds/click1.mp3, sounds/click2.mp3 ...
-  const IMAGE_FOLDER = 'images/';
-  const SOUND_FOLDER = 'sounds/';
-  const IMAGE_EXT = '.png';
-  const SOUND_EXT = '.mp3';
-
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      const cellNumber = r * COLS + c + 1; // 1..35, used to pick image/sound file
-      cell.dataset.cellNumber = cellNumber;
-
-      // Background image — e.g. images/img1.jpg, images/img2.jpg, ...
-      cell.style.backgroundImage = `url('${IMAGE_FOLDER}img${cellNumber}${IMAGE_EXT}')`;
-
-      // Play sound on click/tap, e.g. sounds/click1.mp3, sounds/click2.mp3, ...
-      const activate = () => {
-        if (!isMuted) {
-          const audio = new Audio(`${SOUND_FOLDER}click${cellNumber}${SOUND_EXT}`);
-          audio.play().catch(err => console.log('Could not play sound:', err));
-        }
-
-        cell.classList.add('pressed');
-        setTimeout(() => cell.classList.remove('pressed'), 150);
-      };
-      cell.addEventListener('click', activate);
-
-      grid.appendChild(cell);
+  // Each option in the dropdown maps to one of these configs.
+  // Change folder paths / extensions / titles / default marker cell here
+  // to match whatever assets exist for that series.
+  const DATASETS = {
+    alphabet: {
+      cols: 5,
+      rows: 7,
+      imageFolder: 'images/',
+      soundFolder: 'sounds/',
+      imageExt: '.png',
+      soundExt: '.mp3',
+      title: ' ព្យព្ជានៈ',
+      defaultCell: 30
+    },
+    series1: {
+      cols: 6,
+      rows: 8,
+      imageFolder: 'images/series1/',
+      soundFolder: 'sounds/series1/',
+      imageExt: '.png',
+      soundExt: '.mp3',
+      title: ' ស៊េរីទី១',
+      defaultCell: 48
+    },
+    series2: {
+      cols: 6,
+      rows: 8,
+      imageFolder: 'images/series2/',
+      soundFolder: 'sounds/series2/',
+      imageExt: '.png',
+      soundExt: '.mp3',
+      title: ' ស៊េរីទី២',
+      defaultCell: 48
     }
+  };
+
+  // Mutable "current" values, referenced by cell click handlers.
+  // These get reassigned every time buildBoard() runs.
+  let COLS = 5;
+  let ROWS = 7;
+  let IMAGE_FOLDER = 'images/';
+  let SOUND_FOLDER = 'sounds/';
+  let IMAGE_EXT = '.png';
+  let SOUND_EXT = '.mp3';
+
+  function buildBoard(key) {
+    const config = DATASETS[key];
+    if (!config) return;
+
+    COLS = config.cols;
+    ROWS = config.rows;
+    IMAGE_FOLDER = config.imageFolder;
+    SOUND_FOLDER = config.soundFolder;
+    IMAGE_EXT = config.imageExt;
+    SOUND_EXT = config.soundExt;
+
+    // Update the grid's column/row count so CSS (which reads these
+    // custom properties) resizes the board and cells automatically.
+    boardWrap.style.setProperty('--board-cols', COLS);
+    boardWrap.style.setProperty('--board-rows', ROWS);
+
+    titleEl.textContent = config.title;
+
+    grid.innerHTML = '';
+
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        const cellNumber = r * COLS + c + 1; // used to pick image/sound file
+        cell.dataset.cellNumber = cellNumber;
+
+        // Background image — e.g. images/series1/img1.png, ...
+        cell.style.backgroundImage = `url('${IMAGE_FOLDER}img${cellNumber}${IMAGE_EXT}')`;
+
+        // Play sound on click/tap, e.g. sounds/series1/click1.mp3, ...
+        const activate = () => {
+          if (!isMuted) {
+            const audio = new Audio(`${SOUND_FOLDER}click${cellNumber}${SOUND_EXT}`);
+            audio.play().catch(err => console.log('Could not play sound:', err));
+          }
+
+          cell.classList.add('pressed');
+          setTimeout(() => cell.classList.remove('pressed'), 150);
+        };
+        cell.addEventListener('click', activate);
+
+        grid.appendChild(cell);
+      }
+    }
+
+    // Wait a frame so the board has its new size before placing the marker
+    requestAnimationFrame(() => positionMarkerOnCell(config.defaultCell));
   }
 
-  positionMarkerOnCell(30);
+  seriesSelect.addEventListener('change', () => {
+    buildBoard(seriesSelect.value);
+  });
+
+  buildBoard('alphabet');
 
   /* ---------- Draggable target marker: can be moved smoothly to any spot ---------- */
   let dragging = false;
