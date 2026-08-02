@@ -154,15 +154,18 @@
   /* Draggable target marker — lives inside boardWrap so its resting
      position scales proportionally with the board on any screen size */
   #targetMarker {
-    width: clamp(16px, 4.2vw, 26px);
-    height: clamp(16px, 4.2vw, 26px);
+    /* Cell width is roughly board-width / 5, so half a cell is
+       roughly board-width / 10 — this keeps the marker sized to
+       "half a cell" at any screen size, portrait or landscape. */
+    width: clamp(16px, 9vw, 46px);
+    height: clamp(16px, 9vw, 46px);
     border-radius: 50%;
     background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b 70%);
     border: 2px solid #7f1d1d;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(9px, 2.3vw, 14px);
+    font-size: clamp(9px, 4.5vw, 22px);
     color: #fff;
     cursor: grab;
     touch-action: none;
@@ -339,26 +342,24 @@
     clearDragOver();
 
     if (cell) {
-      // Snap the target marker to the top-right corner of the dropped cell,
-      // so the letter/image underneath stays visible. Position is stored
-      // as a % of boardWrap's own size (not px), so it lands in the same
-      // relative spot on the board no matter the screen size afterwards.
+      // Snap the target marker to the middle of the dropped cell.
+      // Position is stored as a % of boardWrap's own size (not px),
+      // so it lands in the same relative spot on the board no matter
+      // the screen size, orientation, or device afterwards.
       const cellRect = cell.getBoundingClientRect();
       const wrapRect = boardWrap.getBoundingClientRect();
-      const markerSize = targetMarker.offsetWidth;
-      const inset = markerSize * 0.35; // partially overlap the corner, not cover it
 
-      const leftPx = cellRect.right - wrapRect.left - inset;
-      const topPx = cellRect.top - wrapRect.top - inset;
-      const leftPct = (leftPx / wrapRect.width) * 100;
-      const topPct = (topPx / wrapRect.height) * 100;
+      const centerXPx = cellRect.left + cellRect.width / 2 - wrapRect.left;
+      const centerYPx = cellRect.top + cellRect.height / 2 - wrapRect.top;
+      const leftPct = (centerXPx / wrapRect.width) * 100;
+      const topPct = (centerYPx / wrapRect.height) * 100;
 
       targetMarker.style.position = 'absolute';
       targetMarker.style.left = leftPct + '%';
       targetMarker.style.top = topPct + '%';
       targetMarker.style.margin = '0';
       targetMarker.style.zIndex = '5';
-      targetMarker.style.transform = 'none';
+      targetMarker.style.transform = 'translate(-50%, -50%)';
       boardWrap.appendChild(targetMarker);
     } else {
       // Not dropped on a cell — return to the default resting spot
