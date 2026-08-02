@@ -159,29 +159,32 @@
     transform: scale(1.05);
   }
 
-  /* Draggable target marker */
-  #targetTray {
-    display: flex;
-    justify-content: center;
-    margin-top: clamp(10px, 2.5vw, 20px);
-  }
+  /* Draggable target marker — lives inside boardWrap so its resting
+     position scales proportionally with the board on any screen size */
   #targetMarker {
-    width: clamp(18px, 4.5vw, 26px);
-    height: clamp(18px, 4.5vw, 26px);
+    width: clamp(16px, 4.2vw, 26px);
+    height: clamp(16px, 4.2vw, 26px);
     border-radius: 50%;
     background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b 70%);
     border: 2px solid #7f1d1d;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(10px, 2.5vw, 14px);
+    font-size: clamp(9px, 2.3vw, 14px);
     color: #fff;
     cursor: grab;
     touch-action: none;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    position: relative;
     z-index: 5;
     transition: box-shadow 0.15s ease;
+
+    /* Default resting spot: on the second half (lower rows) of the
+       grid, tucked at the right edge. All in %, so it re-lands in the
+       same relative spot on the board at any viewport size. */
+    position: absolute;
+    top: 60%;
+    left: 96%;
+    transform: translate(-50%, -50%);
   }
   #targetMarker.dragging {
     cursor: grabbing;
@@ -198,11 +201,9 @@
 
 <div id="boardWrap">
   <div id="letterGrid"></div>
-</div>
-
-<div id="targetTray">
   <div id="targetMarker" aria-label="Target marker, drag onto any cell">🎯</div>
 </div>
+
 
 <script>
   const COLS = 5;
@@ -210,7 +211,7 @@
   const grid = document.getElementById('letterGrid');
   const muteBtn = document.getElementById('muteBtn');
   const targetMarker = document.getElementById('targetMarker');
-  const targetTray = document.getElementById('targetTray');
+  const boardWrap = document.getElementById('boardWrap');
 
   let isMuted = false;
   muteBtn.addEventListener('click', () => {
@@ -316,14 +317,28 @@
 
     if (cell) {
       // Snap the target marker to the top-right corner of the dropped cell,
-      // so the letter/image underneath stays visible
+      // so the letter/image underneath stays visible. Position is stored
+      // as a % of boardWrap's own size (not px), so it lands in the same
+      // relative spot on the board no matter the screen size afterwards.
       const cellRect = cell.getBoundingClientRect();
+      const wrapRect = boardWrap.getBoundingClientRect();
       const markerSize = targetMarker.offsetWidth;
       const inset = markerSize * 0.35; // partially overlap the corner, not cover it
-      targetMarker.style.left = (cellRect.right - inset) + 'px';
-      targetMarker.style.top = (cellRect.top - inset) + 'px';
+
+      const leftPx = cellRect.right - wrapRect.left - inset;
+      const topPx = cellRect.top - wrapRect.top - inset;
+      const leftPct = (leftPx / wrapRect.width) * 100;
+      const topPct = (topPx / wrapRect.height) * 100;
+
+      targetMarker.style.position = 'absolute';
+      targetMarker.style.left = leftPct + '%';
+      targetMarker.style.top = topPct + '%';
+      targetMarker.style.margin = '0';
+      targetMarker.style.zIndex = '5';
+      targetMarker.style.transform = 'none';
+      boardWrap.appendChild(targetMarker);
     } else {
-      // Snap back to the tray if not dropped on a cell
+      // Not dropped on a cell — return to the default resting spot
       returnToTray();
     }
   }
@@ -334,7 +349,8 @@
     targetMarker.style.top = '';
     targetMarker.style.margin = '';
     targetMarker.style.zIndex = '';
-    targetTray.appendChild(targetMarker);
+    targetMarker.style.transform = '';
+    boardWrap.appendChild(targetMarker);
   }
 
   // Pointer events cover mouse, touch, and pen in one API
