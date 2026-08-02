@@ -183,6 +183,14 @@
     cursor: grabbing;
     box-shadow: 0 6px 16px rgba(0,0,0,0.4);
   }
+  /* Brief settle animation applied only at the moment of drop, so the
+     marker doesn't feel like it's snapping abruptly — but is never
+     applied while actively tracking the pointer (that stays 1:1). */
+  #targetMarker.settling {
+    transition: left 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+                top 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  }
 </style>
 </head>
 <body>
@@ -248,7 +256,7 @@
 
   positionMarkerOnCell(30);
 
-  /* ---------- Draggable target marker: can be moved onto any cell ---------- */
+  /* ---------- Draggable target marker: can be moved smoothly to any spot ---------- */
   let dragging = false;
   let startLeft = 0;
   let startTop = 0;
@@ -302,6 +310,7 @@
     dragging = true;
     document.body.classList.add('dragging-active');
     targetMarker.classList.add('dragging');
+    targetMarker.classList.remove('settling');
     const rect = targetMarker.getBoundingClientRect();
 
     // Remember the marker's starting screen position, then move it purely
@@ -334,6 +343,8 @@
     const dy = lastPointerY - startPointerY;
     targetMarker.style.transform = `translate(${dx}px, ${dy}px)`;
 
+    // Purely cosmetic highlight of whichever cell is currently underneath —
+    // this no longer restricts where the marker can be dropped.
     const cell = getCellUnderPoint(lastPointerX, lastPointerY);
     if (cell !== currentDragOverCell) {
       clearDragOver();
@@ -362,36 +373,43 @@
     targetMarker.classList.remove('dragging');
     targetMarker.style.willChange = '';
 
-    const cell = getCellUnderPoint(clientX, clientY);
     clearDragOver();
 
-    if (cell) {
-      // Snap the target marker to the middle of the dropped cell.
-      // Position is stored as a % of boardWrap's own size (not px),
-      // so it lands in the same relative spot on the board no matter
-      // the screen size, orientation, or device afterwards.
-      const cellRect = cell.getBoundingClientRect();
-      const wrapRect = boardWrap.getBoundingClientRect();
+    // Free placement: drop the marker exactly where it was released,
+    // anywhere on the board — not restricted to a cell. Position is
+    // clamped to stay fully inside boardWrap, and stored as a % of the
+    // board's own size so it stays correctly placed on any screen size.
+    const wrapRect = boardWrap.getBoundingClientRect();
+    const markerRect = targetMarker.getBoundingClientRect();
+    const markerHalfW = markerRect.width / 2;
+    const markerHalfH = markerRect.height / 2;
 
-      const centerXPx = cellRect.left + cellRect.width / 2 - wrapRect.left;
-      const centerYPx = cellRect.top + cellRect.height / 2 - wrapRect.top;
-      const leftPct = (centerXPx / wrapRect.width) * 100;
-      const topPct = (centerYPx / wrapRect.height) * 100;
+    let xPx = clientX - wrapRect.left;
+    let yPx = clientY - wrapRect.top;
 
-      targetMarker.style.position = 'absolute';
-      targetMarker.style.left = leftPct + '%';
-      targetMarker.style.top = topPct + '%';
-      targetMarker.style.margin = '0';
-      targetMarker.style.zIndex = '5';
-      targetMarker.style.transform = 'translate(-50%, -50%)';
-      boardWrap.appendChild(targetMarker);
-    } else {
-      // Not dropped on a cell — return to the default resting spot
-      returnToTray();
-    }
+    xPx = Math.min(Math.max(xPx, markerHalfW), wrapRect.width - markerHalfW);
+    yPx = Math.min(Math.max(yPx, markerHalfH), wrapRect.height - markerHalfH);
+
+    const leftPct = (xPx / wrapRect.width) * 100;
+    const topPct = (yPx / wrapRect.height) * 100;
+
+    // Briefly enable a smooth settle transition for the final snap into
+    // place, then remove it so future drags stay perfectly 1:1 with the
+    // pointer (no lag).
+    targetMarker.classList.add('settling');
+    targetMarker.style.position = 'absolute';
+    targetMarker.style.left = leftPct + '%';
+    targetMarker.style.top = topPct + '%';
+    targetMarker.style.margin = '0';
+    targetMarker.style.zIndex = '5';
+    targetMarker.style.transform = 'translate(-50%, -50%)';
+    boardWrap.appendChild(targetMarker);
+
+    setTimeout(() => targetMarker.classList.remove('settling'), 200);
   }
 
   function returnToTray() {
+    targetMarker.classList.remove('settling');
     targetMarker.style.position = '';
     targetMarker.style.left = '';
     targetMarker.style.top = '';
