@@ -154,18 +154,16 @@
   /* Draggable target marker — lives inside boardWrap so its resting
      position scales proportionally with the board on any screen size */
   #targetMarker {
-    /* Cell width is roughly board-width / 5, so half a cell is
-       roughly board-width / 10 — this keeps the marker sized to
-       "half a cell" at any screen size, portrait or landscape. */
-    width: clamp(16px, 9vw, 46px);
-    height: clamp(16px, 9vw, 46px);
+    /* Small marker that still scales with the board on any screen size */
+    width: clamp(12px, 4vw, 22px);
+    height: clamp(12px, 4vw, 22px);
     border-radius: 50%;
     background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b 70%);
     border: 2px solid #7f1d1d;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(9px, 4.5vw, 22px);
+    font-size: clamp(7px, 2vw, 12px);
     color: #fff;
     cursor: grab;
     touch-action: none;
