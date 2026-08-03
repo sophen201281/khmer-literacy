@@ -184,6 +184,8 @@
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     z-index: 5;
     transition: box-shadow 0.15s ease;
+    will-change: transform;
+    backface-visibility: hidden;
 
     /* Fallback resting spot before JS positions it exactly on cell 30
        (row 6, column 5 — near the bottom-right of the grid). All in %,
@@ -191,7 +193,7 @@
     position: absolute;
     top: 79%;
     left: 96%;
-    transform: translate(-50%, -50%);
+    transform: translate3d(-50%, -50%, 0);
   }
   #targetMarker.dragging {
     cursor: grabbing;
@@ -520,7 +522,7 @@
     targetMarker.style.top = topPct + '%';
     targetMarker.style.margin = '0';
     targetMarker.style.zIndex = '5';
-    targetMarker.style.transform = 'translate(-50%, -50%)';
+    targetMarker.style.transform = 'translate3d(-50%, -50%, 0)';
     boardWrap.appendChild(targetMarker);
 
     updateDropPreview(cell);
@@ -550,7 +552,7 @@
     targetMarker.style.margin = '0';
     targetMarker.style.zIndex = '999';
     targetMarker.style.willChange = 'transform';
-    targetMarker.style.transform = 'translate(0px, 0px)';
+    targetMarker.style.transform = 'translate3d(0px, 0px, 0)';
     document.body.appendChild(targetMarker); // ensure it's above everything
 
     rafPending = false;
@@ -561,7 +563,7 @@
     if (!dragging) return;
     const dx = lastPointerX - startPointerX;
     const dy = lastPointerY - startPointerY;
-    targetMarker.style.transform = `translate(${dx}px, ${dy}px)`;
+    targetMarker.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
 
     // Purely cosmetic highlight of whichever cell is currently underneath —
     // this no longer restricts where the marker can be dropped.
@@ -571,6 +573,7 @@
       if (cell) {
         cell.classList.add('drag-over');
         currentDragOverCell = cell;
+        updateDropPreview(cell);
       }
     }
   }
@@ -624,7 +627,7 @@
     targetMarker.style.top = topPct + '%';
     targetMarker.style.margin = '0';
     targetMarker.style.zIndex = '5';
-    targetMarker.style.transform = 'translate(-50%, -50%)';
+    targetMarker.style.transform = 'translate3d(-50%, -50%, 0)';
     boardWrap.appendChild(targetMarker);
 
     setTimeout(() => targetMarker.classList.remove('settling'), 200);
