@@ -340,6 +340,7 @@
     <option value="series2">ស៊េរីទី២ (Second Series)</option>
   </select>
   <div id="dropPreview" class="drop-preview" aria-live="polite" aria-label="Selected cell preview"></div>
+  <div id="clickPreview" class="drop-preview" aria-live="polite" aria-label="Clicked cell preview"></div>
 </div>
 
 <div id="boardWrap">
@@ -356,6 +357,7 @@
   const titleEl = document.getElementById('title');
   const seriesSelect = document.getElementById('seriesSelect');
   const dropPreview = document.getElementById('dropPreview');
+  const clickPreview = document.getElementById('clickPreview');
 
   // Shows whichever cell the marker currently sits on, in the small
   // preview box next to the dropdown. Pass null to hide it.
@@ -366,6 +368,17 @@
     }
     dropPreview.style.backgroundImage = cell.style.backgroundImage;
     dropPreview.classList.add('visible');
+  }
+
+  // Shows whichever cell was just clicked/tapped, in the small preview
+  // box beside the first one. Pass null to hide it.
+  function updateClickPreview(cell) {
+    if (!cell) {
+      clickPreview.classList.remove('visible');
+      return;
+    }
+    clickPreview.style.backgroundImage = cell.style.backgroundImage;
+    clickPreview.classList.add('visible');
   }
 
   let isMuted = false;
@@ -439,6 +452,7 @@
     titleEl.textContent = config.title;
 
     grid.innerHTML = '';
+    updateClickPreview(null);
 
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
@@ -459,6 +473,7 @@
 
           cell.classList.add('pressed');
           setTimeout(() => cell.classList.remove('pressed'), 150);
+          updateClickPreview(cell);
         };
         cell.addEventListener('click', activate);
 
