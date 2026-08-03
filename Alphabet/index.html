@@ -10,6 +10,7 @@
   }
   html, body {
     height: 100%;
+    height: 100dvh;
     margin: 0;
     overflow: hidden;
   }
@@ -21,8 +22,14 @@
     justify-content: center;
     align-items: center;
     padding: clamp(8px, 2.5vh, 40px) clamp(10px, 3vw, 40px);
+    padding-top: max(clamp(8px, 2.5vh, 40px), env(safe-area-inset-top));
+    padding-bottom: max(clamp(8px, 2.5vh, 40px), env(safe-area-inset-bottom));
+    padding-left: max(clamp(10px, 3vw, 40px), env(safe-area-inset-left));
+    padding-right: max(clamp(10px, 3vw, 40px), env(safe-area-inset-right));
     -webkit-user-select: none;
     user-select: none;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   #title {
@@ -43,9 +50,12 @@
        option is selected in the dropdown. */
     --board-cols: 5;
     --board-rows: 7;
-    width: min(92vw, calc((100vh - 150px) * var(--board-cols) / var(--board-rows)), 500px);
+    width: min(92vw, calc((100dvh - 150px) * var(--board-cols) / var(--board-rows)), 500px);
+    max-width: 100%;
+    max-height: 100%;
     aspect-ratio: var(--board-cols) / var(--board-rows);
-    flex-shrink: 0;
+    flex-shrink: 1;
+    margin: 0 auto;
   }
 
   #letterGrid {
@@ -108,8 +118,8 @@
 
   #muteBtn {
     position: fixed;
-    top: 16px;
-    right: 16px;
+    top: max(16px, env(safe-area-inset-top));
+    right: max(16px, env(safe-area-inset-right));
     width: 48px;
     height: 48px;
     border-radius: 50%;
@@ -131,8 +141,8 @@
 
   .home-btn {
     position: fixed;
-    top: 16px;
-    left: 16px;
+    top: max(16px, env(safe-area-inset-top));
+    left: max(16px, env(safe-area-inset-left));
     display: flex;
     align-items: center;
     gap: 6px;
@@ -226,6 +236,62 @@
     transition: left 0.18s cubic-bezier(0.22, 1, 0.36, 1),
                 top 0.18s cubic-bezier(0.22, 1, 0.36, 1),
                 transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Short/landscape screens (e.g. phone rotated sideways): shrink the
+     header controls so the board keeps as much vertical room as possible */
+  @media (max-height: 500px) {
+    body {
+      padding-top: max(6px, env(safe-area-inset-top));
+      padding-bottom: max(6px, env(safe-area-inset-bottom));
+    }
+    #title {
+      font-size: clamp(13px, 4vh, 22px);
+      margin-bottom: clamp(3px, 1vh, 8px);
+    }
+    #seriesSelectWrap {
+      margin-bottom: clamp(4px, 1vh, 10px);
+    }
+    #seriesSelect {
+      font-size: clamp(11px, 3vh, 15px);
+      padding: 4px 30px 4px 14px;
+    }
+    #muteBtn {
+      width: 38px;
+      height: 38px;
+      top: max(8px, env(safe-area-inset-top));
+      right: max(8px, env(safe-area-inset-right));
+    }
+    .home-btn {
+      padding: 5px 10px;
+      font-size: clamp(11px, 3vh, 14px);
+      top: max(8px, env(safe-area-inset-top));
+      left: max(8px, env(safe-area-inset-left));
+    }
+  }
+
+  /* Very small phones in portrait: tighten the fixed buttons too */
+  @media (max-width: 340px) {
+    #muteBtn {
+      width: 40px;
+      height: 40px;
+      top: 10px;
+      right: 10px;
+    }
+    .home-btn {
+      padding: 6px 10px;
+      font-size: 12px;
+      top: 10px;
+      left: 10px;
+    }
+  }
+
+  /* Foldables / large tablets in portrait: let the board grow a bit
+     beyond the base 500px cap while keeping proportions */
+  @media (min-width: 900px) {
+    #boardWrap {
+      width: min(60vw, calc((100dvh - 150px) * var(--board-cols) / var(--board-rows)), 640px);
+    }
   }
 </style>
 </head>
