@@ -311,7 +311,7 @@
       <button class="pen-swatch" data-color="#B3243D" style="background:#B3243D" title="Red"></button>
       <span class="bar-label">size</span>
       <select id="penSize" class="img-select" title="Pen thickness">
-        <option value="2">2</option>
+        <option value="2" selected>2</option>
         <option value="4">4</option>
         <option value="6">6</option>
         <option value="8">8</option>
@@ -319,7 +319,7 @@
         <option value="15">15</option>
         <option value="20">20</option>
         <option value="30">30</option>
-        <option value="45" selected>45</option>
+        <option value="45">45</option>
         <option value="60">60</option>
         <option value="90">90</option>
       </select>
@@ -356,7 +356,7 @@
 
   let drawEnabled = false; // drawing is an independent overlay
   let drawColor = '#2A2622';
-  let drawSize = 45;
+  let drawSize = 2;
   let isEraser = false;
 
   // Each drawable surface tracks its own canvas/ctx/strokes independently,
