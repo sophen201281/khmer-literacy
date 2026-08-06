@@ -2,7 +2,7 @@
 <html lang="km">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
   <title>ប្រកបអាន</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,11 +16,13 @@
       --line:#E7E0D1;
       --accent:#C1652F;
       --accent-soft:#F1E3D3;
+      --toolbar-h: 64px;
     }
     *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-    html{ -webkit-text-size-adjust:100%; }
+    html{ -webkit-text-size-adjust:100%; overflow-x:hidden; }
     body{
       margin:0;
+      width:100%;
       min-height:100vh;
       min-height:100dvh;
       background:
@@ -31,19 +33,19 @@
       display:flex;
       flex-direction:column;
       align-items:center;
-      padding:24px clamp(10px, 3vw, 36px) 60px;
+      padding:clamp(12px, 3vw, 24px) clamp(8px, 3vw, 36px) 24px;
       overflow-x:hidden;
     }
     h1{
       font-family:'Battambang', Georgia, 'Times New Roman', serif;
       font-weight:700;
-      font-size:clamp(22px, 5vw, 30px);
+      font-size:clamp(20px, 5vw, 30px);
       letter-spacing:-0.01em;
       margin:0 0 4px;
       text-align:center;
     }
     .sub{
-      font-size:clamp(10.5px, 2.6vw, 12px);
+      font-size:clamp(10px, 2.6vw, 12px);
       color:var(--muted);
       margin-bottom:20px;
       text-transform:uppercase;
@@ -54,15 +56,17 @@
     /* Toolbar — the "pen tray" — pinned to the bottom of the viewport */
     .toolbar{
       position:fixed;
-      bottom:14px;
+      bottom:clamp(6px, 2vw, 14px);
       left:50%;
       transform:translateX(-50%);
       z-index:100;
       width:min(820px, 96vw);
+      max-height:min(60vh, 60dvh);
+      overflow-y:auto;
       background:var(--card);
       border:1px solid var(--line);
       border-radius:14px;
-      padding:10px 12px;
+      padding:10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
       display:flex;
       flex-wrap:wrap;
       align-items:center;
@@ -87,10 +91,12 @@
       background:transparent;
       color:var(--ink);
       padding:7px 10px;
+      min-height:36px;
       border-radius:7px;
       cursor:pointer;
       transition:background .15s, color .15s;
       white-space:nowrap;
+      touch-action:manipulation;
     }
     .tool-btn:hover{ background:#00000008; }
     .tool-btn.active{
@@ -113,13 +119,14 @@
       white-space:nowrap;
     }
     .pen-swatch{
-      width:22px; height:22px;
-      min-width:22px;
+      width:24px; height:24px;
+      min-width:24px;
       border-radius:50%;
       border:2px solid #ffffffcc;
       outline:1px solid var(--line);
       cursor:pointer;
       padding:0;
+      touch-action:manipulation;
     }
     .pen-swatch.active{
       outline:2px solid var(--accent);
@@ -132,11 +139,13 @@
       background:none;
       border:1px solid var(--line);
       color:var(--ink);
-      padding:6px 10px;
+      padding:7px 10px;
+      min-height:34px;
       border-radius:7px;
       cursor:pointer;
       letter-spacing:.02em;
       white-space:nowrap;
+      touch-action:manipulation;
     }
     .text-btn:hover{ background:var(--accent-soft); border-color:var(--accent); }
     .text-btn.active{
@@ -153,10 +162,12 @@
       background:var(--card);
       border:1px solid var(--line);
       color:var(--ink);
-      padding:6px 8px;
+      padding:7px 8px;
+      min-height:34px;
       border-radius:7px;
       cursor:pointer;
       letter-spacing:.02em;
+      max-width:100%;
     }
     .img-select:hover{ border-color:var(--accent); }
 
@@ -167,10 +178,12 @@
       border:none;
       color:var(--ink);
       padding:7px 12px;
+      min-height:36px;
       border-radius:7px;
       cursor:pointer;
       white-space:nowrap;
       transition:background .15s, color .15s;
+      touch-action:manipulation;
     }
     .homeBtn:hover{ background:#00000008; }
     .homeBtn:active{ transform:scale(0.96); }
@@ -187,6 +200,7 @@
       overflow:hidden;
       display:flex;
       align-items:stretch;
+      flex-wrap:wrap;
     }
     .stage-half{
       position:relative;
@@ -199,8 +213,8 @@
     .text-layer{
       position:relative;
       z-index:1;
-      padding:clamp(18px, 4vw, 34px) clamp(16px, 4vw, 36px);
-      min-height:320px;
+      padding:clamp(16px, 4vw, 34px) clamp(14px, 4vw, 36px);
+      min-height:clamp(220px, 40vh, 320px);
       height:100%;
       font-family:'Battambang', 'Courier New', ui-monospace, monospace;
       font-size:16px;
@@ -247,9 +261,9 @@
       flex-direction:column;
       align-items:center;
       justify-content:center;
-      min-height:320px;
+      min-height:clamp(200px, 40vh, 320px);
       background:var(--paper);
-      padding:16px;
+      padding:clamp(10px, 3vw, 16px);
       overflow:hidden;
     }
     .image-select-bar{
@@ -264,6 +278,8 @@
     .preview-image{
       max-width:100%;
       max-height:100%;
+      width:auto;
+      height:auto;
       object-fit:contain;
       border-radius:8px;
       display:block;
@@ -280,6 +296,7 @@
       background:var(--accent-soft);
       padding:1px 5px;
       border-radius:4px;
+      word-break:break-all;
     }
 
     .hint{
@@ -288,6 +305,11 @@
       color:var(--muted);
       margin-top:10px;
       line-height:1.6;
+    }
+
+    /* Large desktop: keep the stage comfortably centered, don't stretch too wide */
+    @media (min-width:1400px){
+      .stage{ width:min(1200px, 90vw); }
     }
 
     /* Tablet */
@@ -300,19 +322,43 @@
 
     /* Phone */
     @media (max-width:600px){
-      body{ padding:16px 8px 48px; }
-      .toolbar{ padding:8px 10px; gap:6px 10px; bottom:8px; }
+      body{ padding:14px 8px 20px; }
+      h1{ margin-top:2px; }
+      .toolbar{ padding:8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); gap:6px 10px; bottom:8px; }
       .tool-group{ flex:1 1 auto; justify-content:center; }
       .text-btn.danger{ margin-left:0; flex:1 1 100%; text-align:center; }
       input[type="range"]{ width:70px; }
+      .img-select{ font-size:11px; }
     }
 
     /* Small phone */
     @media (max-width:400px){
       .tool-btn{ padding:6px 8px; }
       .bar-label{ display:none; }
-      .pen-swatch{ width:20px; height:20px; min-width:20px; }
+      .pen-swatch{ width:22px; height:22px; min-width:22px; }
       .text-layer{ font-size:15px; }
+      .stage-image{ min-height:200px; }
+    }
+
+    /* Very narrow phones */
+    @media (max-width:340px){
+      .tool-group{ padding:3px; gap:4px; }
+      .text-btn, .homeBtn, .img-select{ font-size:10.5px; padding:6px 7px; }
+    }
+
+    /* Short / landscape phones: shrink the toolbar footprint so it doesn't eat the stage */
+    @media (max-height:480px) and (orientation:landscape){
+      body{ padding-top:8px; padding-bottom:8px; }
+      h1{ font-size:16px; margin-bottom:2px; }
+      .sub{ margin-bottom:10px; }
+      .toolbar{ position:static; transform:none; margin-top:12px; max-height:40vh; }
+      .stage{ margin-top:0; }
+      .text-layer, .stage-image{ min-height:180px; }
+    }
+
+    /* Respect reduced-motion preferences */
+    @media (prefers-reduced-motion: reduce){
+      *{ transition:none !important; }
     }
   </style>
 </head>
@@ -354,7 +400,7 @@
       <button class="pen-swatch" data-color="#B3243D" style="background:#B3243D" title="Red"></button>
       <span class="bar-label">size</span>
       <select id="penSize" class="img-select" title="Pen thickness">
-        <option value="2">2</option>
+        <option value="2" selected>2</option>
         <option value="4">4</option>
         <option value="6">6</option>
         <option value="8">8</option>
@@ -362,7 +408,7 @@
         <option value="15">15</option>
         <option value="20">20</option>
         <option value="30">30</option>
-        <option value="45" selected>45</option>
+        <option value="45">45</option>
         <option value="60">60</option>
         <option value="90">90</option>
       </select>
@@ -407,9 +453,9 @@
   let mode = 'type'; // 'type' | 'move'
   let drawEnabled = false; // drawing is an independent overlay, not an exclusive mode
   let drawColor = '#2A2622';
-  let drawSize = 45;
+  let drawSize = 2;
   let isEraser = false;
-  let fontSize = 16;
+  let fontSize = 60; // default text size (px)
   let isShattered = false;
 
   // Each drawable surface tracks its own canvas/ctx/strokes independently,
@@ -554,7 +600,7 @@
 
   // ---- Font size ----
   function updateFontSize(delta){
-    fontSize = Math.min(100, Math.max(45, fontSize + delta));
+    fontSize = Math.min(100, Math.max(2, fontSize + delta));
     textLayer.style.fontSize = fontSize + 'px';
     sizeCanvasToLayer();
   }
@@ -727,7 +773,9 @@
 
   // ---- Keep body padding clear of the fixed bottom toolbar, even as its height changes ----
   function adjustBodyPadding(){
-    document.body.style.paddingBottom = (toolbarEl.offsetHeight + 28) + 'px';
+    // On short/landscape screens the toolbar becomes static (see CSS), so no reserved padding is needed.
+    const isStatic = window.matchMedia('(max-height:480px) and (orientation:landscape)').matches;
+    document.body.style.paddingBottom = isStatic ? '20px' : (toolbarEl.offsetHeight + 28) + 'px';
   }
   const roToolbar = new ResizeObserver(adjustBodyPadding);
   roToolbar.observe(toolbarEl);
@@ -735,9 +783,10 @@
   const ro = new ResizeObserver(() => sizeCanvasToLayer());
   ro.observe(textLayer);
   ro.observe(stageImage);
-  window.addEventListener('resize', sizeCanvasToLayer);
-  window.addEventListener('orientationchange', () => setTimeout(sizeCanvasToLayer, 200));
+  window.addEventListener('resize', () => { sizeCanvasToLayer(); adjustBodyPadding(); });
+  window.addEventListener('orientationchange', () => setTimeout(() => { sizeCanvasToLayer(); adjustBodyPadding(); }, 200));
   window.addEventListener('load', () => {
+    textLayer.style.fontSize = fontSize + 'px';
     sizeCanvasToLayer();
     setMode('type');
     updateCanvasInteractivity();
