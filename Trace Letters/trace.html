@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Trace the Khmer Letter</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Battambang:wght@700&display=swap">
 <style>
 :root{--bg:#fff8e7;--card:#fff;--ink:#3b2f5c;--accent:#ff6b9d;--guide:#e8e1ff;--line:#8b7fc7;--ok:#2bb673;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -12,7 +12,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 :root[data-theme="dark"]{--bg:#1d1833;--card:#2a2347;--ink:#f1ecff;--guide:#3d3468;--line:#a99cf0}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;min-height:100%}
-body{background:var(--bg);color:var(--ink);font-family:'Noto Sans Khmer','Khmer UI','Khmer OS',system-ui,sans-serif;
+body{background:var(--bg);color:var(--ink);font-family:'Battambang','Khmer UI','Khmer OS',system-ui,sans-serif;
 display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px;user-select:none;-webkit-user-select:none}
 h1{margin:4px 0 0;font-size:clamp(1.3rem,5vw,2rem)}
 #letters{display:flex;justify-content:flex-start;gap:6px;overflow-x:auto;max-width:100%;padding:4px;scrollbar-width:thin}
@@ -44,14 +44,14 @@ font-size:clamp(1.6rem,7vw,2.6rem);font-weight:700;color:var(--ok);pointer-event
 <div id="board">
   <canvas id="guide"></canvas>
   <canvas id="ink"></canvas>
-  <div id="msg"><div>⭐ Great job! ⭐</div></div>
+  <div id="msg"><div>⭐ ធ្វើបានល្អ! ⭐</div></div>
 </div>
 <div id="bar" aria-hidden="true"><div id="fill"></div></div>
 <div class="row" id="colors"></div>
 <div class="row">
   <button class="btn alt" id="case">ឥ ឧ ឪ</button>
-  <button class="btn alt" id="clear">🧽 Clear</button>
-  <button class="btn" id="next">Next ➜</button>
+  <button class="btn alt" id="clear">🧽 លុប</button>
+  <button class="btn" id="next">បន្ទាប់ ➜</button>
 </div>
 
 <script>
@@ -59,7 +59,7 @@ font-size:clamp(1.6rem,7vw,2.6rem);font-weight:700;color:var(--ok);pointer-event
 const board=document.getElementById('board'),gc=document.getElementById('guide'),ic=document.getElementById('ink');
 const g=gc.getContext('2d'),ink=ic.getContext('2d'),msg=document.getElementById('msg'),fill=document.getElementById('fill');
 const lettersEl=document.getElementById('letters');
-const FONT="'Noto Sans Khmer','Khmer UI','Khmer OS',sans-serif";
+const FONT="'Battambang','Khmer UI','Khmer OS',sans-serif";
 const CONS=[...'កខគឃងចឆជឈញដឋឌឍណតថទធនបផពភមយរលវសហឡអ'];
 const VOW=[...'ឥឦឧឩឪឫឬឭឮឯឰឱឲឳ'];
 let ABC=CONS;
@@ -195,9 +195,8 @@ if('ResizeObserver' in window)new ResizeObserver(resize).observe(board);
 else window.addEventListener('resize',resize);
 window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',drawGuide);
 buildButtons();
-(document.fonts?document.fonts.load('700 100px "Noto Sans Khmer"',ABC[0]):Promise.resolve()).catch(()=>{}).then(resize);
+(document.fonts?document.fonts.load('700 100px "Battambang"',ABC[0]):Promise.resolve()).catch(()=>{}).then(resize);
 })();
 </script>
 </body>
 </html>
-
