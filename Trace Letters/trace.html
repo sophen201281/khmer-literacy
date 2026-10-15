@@ -1,1 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trace the Khmer Letter</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@700&display=swap">
+<style>
+:root{--bg:#fff8e7;--card:#fff;--ink:#3b2f5c;--accent:#ff6b9d;--guide:#e8e1ff;--line:#8b7fc7;--ok:#2bb673;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1833;--card:#2a2347;--ink:#f1ecff;--guide:#3d3468;--line:#a99cf0}}
+:root[data-theme="dark"]{--bg:#1d1833;--card:#2a2347;--ink:#f1ecff;--guide:#3d3468;--line:#a99cf0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:'Noto Sans Khmer','Khmer UI','Khmer OS',system-ui,sans-serif;
+display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px;user-select:none;-webkit-user-select:none}
+h1{margin:4px 0 0;font-size:clamp(1.3rem,5vw,2rem)}
+#letters{display:flex;justify-content:flex-start;gap:6px;overflow-x:auto;max-width:100%;padding:4px;scrollbar-width:thin}
+#letters button{flex:0 0 auto;width:46px;height:46px;line-height:1;padding:0;border-radius:12px;border:2px solid var(--line);background:var(--card);
+color:var(--ink);font:inherit;font-size:1.2rem;font-weight:700;cursor:pointer}
+#letters button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+#letters button.done::after{content:"★";font-size:.6rem;position:relative;top:-14px;left:8px;color:#ffb400}
+#board{position:relative;width:min(92vw,62vh,560px);aspect-ratio:1;background:var(--card);border-radius:24px;
+box-shadow:0 6px 20px rgba(0,0,0,.15);overflow:hidden;touch-action:none}
+#board canvas{position:absolute;inset:0;width:100%;height:100%}
+#ink{touch-action:none;cursor:crosshair}
+#msg{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
+font-size:clamp(1.6rem,7vw,2.6rem);font-weight:700;color:var(--ok);pointer-events:none;text-shadow:0 2px 0 var(--card)}
+#msg.show{display:flex;animation:pop .5s ease}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+#bar{width:min(92vw,62vh,560px);height:14px;border-radius:9px;background:var(--guide);overflow:hidden}
+#fill{height:100%;width:0;background:linear-gradient(90deg,#ffb400,var(--ok));transition:width .2s}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center}
+.btn{border:0;border-radius:16px;padding:12px 20px;font:inherit;font-size:1.05rem;font-weight:700;color:#fff;background:var(--accent);cursor:pointer;min-height:48px}
+.btn.alt{background:var(--line)}
+.btn:active{transform:scale(.96)}
+.sw{width:36px;height:36px;border-radius:50%;border:3px solid var(--card);box-shadow:0 0 0 2px var(--line);cursor:pointer;padding:0}
+.sw.on{box-shadow:0 0 0 4px var(--ink)}
+</style>
+</head>
+<body>
+<h1>✏️ គូរតាមអក្សរ</h1>
+<div id="letters" role="tablist" aria-label="Letters"></div>
+<div id="board">
+  <canvas id="guide"></canvas>
+  <canvas id="ink"></canvas>
+  <div id="msg"><div>⭐ Great job! ⭐</div></div>
+</div>
+<div id="bar" aria-hidden="true"><div id="fill"></div></div>
+<div class="row" id="colors"></div>
+<div class="row">
+  <button class="btn alt" id="case">ឥ ឧ ឪ</button>
+  <button class="btn alt" id="clear">🧽 Clear</button>
+  <button class="btn" id="next">Next ➜</button>
+</div>
+
+<script>
+(function(){
+const board=document.getElementById('board'),gc=document.getElementById('guide'),ic=document.getElementById('ink');
+const g=gc.getContext('2d'),ink=ic.getContext('2d'),msg=document.getElementById('msg'),fill=document.getElementById('fill');
+const lettersEl=document.getElementById('letters');
+const FONT="'Noto Sans Khmer','Khmer UI','Khmer OS',sans-serif";
+const CONS=[...'កខគឃងចឆជឈញដឋឌឍណតថទធនបផពភមយរលវសហឡអ'];
+const VOW=[...'ឥឦឧឩឪឫឬឭឮឯឰឱឲឳ'];
+let ABC=CONS;
+let idx=0,lower=false,color='#ff6b9d',drawing=false,last=null,W=0,H=0,dpr=1,done=new Set(),won=false;
+
+const letter=()=>ABC[idx];
+
+// letter buttons
+function buildButtons(){
+  lettersEl.innerHTML='';
+  [...ABC].forEach((c,i)=>{
+    const b=document.createElement('button');
+    b.textContent=c;
+    b.className=(i===idx?'on ':'')+(done.has(c+lower)?'done':'');
+    b.onclick=()=>select(i);
+    lettersEl.appendChild(b);
+  });
+  const on=lettersEl.querySelector('.on');
+  if(on&&on.scrollIntoView)on.scrollIntoView({inline:'center',block:'nearest'});
+}
+
+// colors
+const cols=document.getElementById('colors');
+['#ff6b9d','#4d9de0','#2bb673','#ff9f1c','#9b5de5'].forEach((c,i)=>{
+  const b=document.createElement('button');
+  b.className='sw'+(i===0?' on':'');b.style.background=c;b.setAttribute('aria-label','Pen color '+(i+1));
+  b.onclick=()=>{color=c;[...cols.children].forEach(x=>x.classList.remove('on'));b.classList.add('on')};
+  cols.appendChild(b);
+});
+
+// geometry of letter
+function layout(ctx,fs){
+  ctx.font='700 '+fs+'px '+FONT;
+  ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  const m=ctx.measureText(letter());
+  const asc=m.actualBoundingBoxAscent||fs*.7,desc=m.actualBoundingBoxDescent||0;
+  const bl=m.actualBoundingBoxLeft||0,br=m.actualBoundingBoxRight||0;
+  return {x:W*.33+(bl-br)/2,y:H/2+(asc-desc)/2};
+}
+const fontSize=()=>W*.6;
+
+function drawGuide(){
+  g.setTransform(dpr,0,0,dpr,0,0);
+  g.clearRect(0,0,W,H);
+  const fs=fontSize(),p=layout(g,fs);
+  g.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--guide').trim()||'#e8e1ff';
+  g.fillText(letter(),p.x,p.y);
+  g.setLineDash([W*.025,W*.022]);g.lineWidth=Math.max(2,W*.007);g.lineCap='round';
+  g.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--line').trim()||'#8b7fc7';
+  g.strokeText(letter(),p.x,p.y);
+  g.setLineDash([]);
+}
+
+function resize(){
+  const r=board.getBoundingClientRect();
+  if(!r.width)return;
+  dpr=Math.min(window.devicePixelRatio||1,3);
+  W=r.width;H=r.height;
+  [gc,ic].forEach(c=>{c.width=W*dpr;c.height=H*dpr});
+  ink.setTransform(dpr,0,0,dpr,0,0);
+  drawGuide();
+  reset(true);
+}
+
+function reset(keepGuide){
+  ink.setTransform(1,0,0,1,0,0);ink.clearRect(0,0,ic.width,ic.height);
+  ink.setTransform(dpr,0,0,dpr,0,0);
+  won=false;msg.classList.remove('show');fill.style.width='0';
+  if(!keepGuide)drawGuide();
+}
+
+function select(i){
+  idx=i;buildButtons();drawGuide();reset(true);
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(ABC[i]);u.lang='km-KH';speechSynthesis.speak(u)}catch(e){}
+}
+
+// drawing
+function pos(e){const r=ic.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
+ic.addEventListener('pointerdown',e=>{
+  e.preventDefault();ic.setPointerCapture(e.pointerId);
+  drawing=true;last=pos(e);
+  ink.fillStyle=color;ink.beginPath();ink.arc(last.x,last.y,penW()/2,0,7);ink.fill();
+});
+ic.addEventListener('pointermove',e=>{
+  if(!drawing)return;e.preventDefault();
+  const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
+  (evs.length?evs:[e]).forEach(ev=>{
+    const p=pos(ev);
+    ink.strokeStyle=color;ink.lineWidth=penW();ink.lineCap='round';ink.lineJoin='round';
+    ink.beginPath();ink.moveTo(last.x,last.y);ink.lineTo(p.x,p.y);ink.stroke();last=p;
+  });
+});
+const end=()=>{if(drawing){drawing=false;check()}};
+ic.addEventListener('pointerup',end);ic.addEventListener('pointercancel',end);
+ic.addEventListener('contextmenu',e=>e.preventDefault());
+const penW=()=>Math.max(10,W*.07);
+
+// scoring on a small grid
+const N=90,mk=document.createElement('canvas'),ik=document.createElement('canvas');
+mk.width=mk.height=ik.width=ik.height=N;
+function check(){
+  const m=mk.getContext('2d',{willReadFrequently:true}),k=ik.getContext('2d',{willReadFrequently:true});
+  m.clearRect(0,0,N,N);k.clearRect(0,0,N,N);
+  // mask: letter fill, rendered at grid size
+  m.save();m.scale(N/W,N/H);
+  const p=layout(m,fontSize());m.fillStyle='#000';m.fillText(letter(),p.x,p.y);m.restore();
+  k.drawImage(ic,0,0,N,N);
+  const a=m.getImageData(0,0,N,N).data,b=k.getImageData(0,0,N,N).data;
+  let total=0,hit=0,inkN=0,out=0;
+  for(let i=3;i<a.length;i+=4){
+    const inMask=a[i]>100,inInk=b[i]>60;
+    if(inMask)total++;
+    if(inInk){inkN++;if(inMask)hit++;else out++}
+    }
+  const cover=total?hit/total:0,outside=inkN?out/inkN:0;
+  // count only reasonably neat tracing
+  const score=Math.max(0,cover-Math.max(0,outside-.25));
+  fill.style.width=Math.min(100,score/.8*100)+'%';
+  if(!won&&score>=.8&&outside<.4){
+    won=true;msg.classList.add('show');
+    done.add(ABC[idx]+lower);buildButtons();
+    try{speechSynthesis.speak(new SpeechSynthesisUtterance('Great job!'))}catch(e){}
+  }
+}
+
+document.getElementById('clear').onclick=()=>reset(true);
+document.getElementById('next').onclick=()=>select((idx+1)%ABC.length);
+document.getElementById('case').onclick=function(){
+  lower=!lower;ABC=lower?VOW:CONS;idx=0;this.textContent=lower?'ក ខ គ':'ឥ ឧ ឪ';buildButtons();drawGuide();reset(true);
+};
+
+if('ResizeObserver' in window)new ResizeObserver(resize).observe(board);
+else window.addEventListener('resize',resize);
+window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',drawGuide);
+buildButtons();
+(document.fonts?document.fonts.load('700 100px "Noto Sans Khmer"',ABC[0]):Promise.resolve()).catch(()=>{}).then(resize);
+})();
+</script>
+</body>
+</html>
 
