@@ -130,8 +130,35 @@
     transform: translate(-50%, -50%);
     margin-top: -1px;
   }
-  .tile.split span:first-child { left: 18%; }
-  .tile.split span:last-child  { left: 77%; }
+  .tile.split span:first-child { left: var(--la); }
+  .tile.split span:last-child  { left: var(--lb); }
+
+  /* The holder: a slot in the middle of a long tile that carries one tile */
+  #board { --slot: 92.44px; --la: 18%; --lb: 77%; }
+  #board.compact { --slot: 86.4px; --la: 13%; --lb: 87%; }
+  .tile.split::after {
+    content: "";
+    position: absolute;
+    box-sizing: border-box;
+    left: 50%;
+    top: 5px;
+    bottom: 7px;
+    width: var(--slot);
+    transform: translateX(-50%);
+    border: 2px dashed rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.07);
+    pointer-events: none;
+  }
+  .tile.snap-slot::after {
+    border: 2px solid var(--target);
+    background: rgba(11, 111, 232, 0.2);
+  }
+  .tile.carried {
+    z-index: 2;
+    box-shadow: -1.5px 1.5px 0 var(--edge), 0 3px 6px rgba(0, 0, 0, 0.35);
+    outline: 1.5px solid var(--edge);
+  }
 
   #layer {
     position: absolute;
@@ -157,11 +184,13 @@
   }
 
   .tile.dragging {
+    z-index: 5;
     cursor: grabbing;
     transition: none;
     transform: translateY(-3px);
     box-shadow: -2px 3px 0 var(--edge), 0 12px 16px rgba(0, 0, 0, 0.28);
   }
+  .tile.dragging.carried { z-index: 6; }
   .tile.discard { opacity: 0.45; }
   .tile.snap-target {
     box-shadow: -1.5px 1.5px 0 var(--edge), 0 0 0 4px var(--target);
@@ -174,7 +203,7 @@
 </head>
 <body>
 
-<p class="hint">Drag a tile onto the mat. Drop it edge to edge against another tile to join them. Drag a tile out of a word to pull it apart, and drop tiles back on the grid to put them away.</p>
+<p class="hint">Drag a tile onto the mat. Drop it edge to edge against another tile to join them. Drag a tile out of a word to pull it apart, and drop tiles back on the grid to put them away. The long tiles have a slot in the middle: drop a tile there and it rides along with the long tile.</p>
 
 <div id="wrap">
   <div id="board">
@@ -209,6 +238,7 @@
   let fitted = false;
   const TH = 54;         // tile height
   const SNAP = 30;       // snap distance in design px
+  const SLOT_SNAP = 40;  // snap distance for dropping a tile into a slot
   const DRAG_START = 5;  // pointer travel before a drag begins
 
   const page = document.body;
@@ -223,6 +253,7 @@
   const tiles = new Set();
   let drag = null;
   let snapEl = null;
+  let snapCls = '';
 
   /* ---------- building tiles ---------- */
   function parse(raw) {
@@ -267,7 +298,7 @@
     const rx = DW / oldDW;
     const ry = board.offsetHeight / oldH;
     tiles.forEach(t => {
-      if (t.prev) return;
+      if (t.prev || t.holder) return;
       const chain = chainFrom(t);
       chain.forEach(c => { c.w = c.el.classList.contains('wide') ? wide : cell; });
       const W = chain.reduce((sum, c) => sum + c.w, 0);
@@ -278,6 +309,7 @@
         c.x = x; c.y = y;
         x += c.w;
         place(c);
+        if (c.carry) seat(c.carry, c, cell);
       });
     });
   }
@@ -325,7 +357,7 @@
     const el = buildEl(raw);
     el.classList.add('placed');
     el.style.width = w + 'px';
-    const t = { raw, x, y, w, el, prev: null, next: null };
+    const t = { raw, x, y, w, el, prev: null, next: null, carry: null, holder: null };
     el._tile = t;
     layer.appendChild(el);
     tiles.add(t);
@@ -345,7 +377,32 @@
     for (let c = t; c; c = c.next) out.push(c);
     return out;
   }
+  const isHolder = t => t.el.classList.contains('split');
+
+  // Seat (or release) a tile in the slot of a long tile
+  function setCarried(t, holder) {
+    if (t.holder) t.holder.carry = null;
+    t.holder = holder;
+    if (holder) holder.carry = t;
+    t.el.classList.toggle('carried', !!holder);
+  }
+  function seat(c, holder, cellW) {
+    c.w = cellW;
+    c.el.style.width = c.w + 'px';
+    c.x = holder.x + (holder.w - c.w) / 2;
+    c.y = holder.y;
+    place(c);
+  }
+
   function removeTile(t) {
+    if (t.carry) {
+      const c = t.carry;
+      t.carry = null;
+      c.holder = null;
+      c.el.remove();
+      tiles.delete(c);
+    }
+    if (t.holder) { t.holder.carry = null; t.holder = null; }
     if (t.prev) { t.prev.next = null; joints(t.prev); }
     if (t.next) { t.next.prev = null; joints(t.next); }
     t.el.remove();
@@ -353,37 +410,50 @@
   }
 
   /* ---------- snapping ---------- */
-  function findSnap(group) {
+  // group = the chain being dragged, all = the chain plus any tiles riding in its slots
+  function findSnap(group, all) {
     const head = group[0];
     const tail = group[group.length - 1];
     const tailRight = tail.x + tail.w;
     const W = tailRight - head.x;
+    const canSeat = group.length === 1 && !isHolder(head);
     let best = null;
 
-    const consider = (d, side, T, dx, dy) => {
+    const consider = (d, side, T, dx, dy, limit) => {
       const nx = head.x + dx;
       if (nx < 0 || nx > DW - W) return;
-      if (d < SNAP && (!best || d < best.d)) best = { d, side, T, dx, dy };
+      if (d < limit && (!best || d < best.d)) best = { d, side, T, dx, dy };
     };
 
     for (const T of tiles) {
-      if (group.includes(T)) continue;
+      if (all.includes(T) || T.holder) continue;
       if (!T.next) {   // group goes on the right end of T
         const d = Math.hypot(head.x - (T.x + T.w), head.y - T.y);
-        consider(d, 'right', T, T.x + T.w - head.x, T.y - head.y);
+        consider(d, 'right', T, T.x + T.w - head.x, T.y - head.y, SNAP);
       }
       if (!T.prev) {   // group goes on the left end of T
         const d = Math.hypot(tailRight - T.x, tail.y - T.y);
-        consider(d, 'left', T, T.x - tailRight, T.y - tail.y);
+        consider(d, 'left', T, T.x - tailRight, T.y - tail.y, SNAP);
+      }
+      if (canSeat && isHolder(T) && !T.carry) {   // tile goes into the slot of T
+        const d = Math.hypot(
+          head.x + head.w / 2 - (T.x + T.w / 2),
+          head.y - T.y);
+        consider(d, 'slot', T, T.x + (T.w - head.w) / 2 - head.x, T.y - head.y, SLOT_SNAP);
       }
     }
     return best;
   }
 
-  function applySnap(group, s) {
+  function applySnap(group, s, all) {
     const head = group[0];
     const tail = group[group.length - 1];
-    group.forEach(g => { g.x += s.dx; g.y += s.dy; place(g); });
+    all.forEach(g => { g.x += s.dx; g.y += s.dy; place(g); });
+    if (s.side === 'slot') {
+      setCarried(head, s.T);
+      layer.appendChild(head.el);
+      return;
+    }
     if (s.side === 'right') { s.T.next = head; head.prev = s.T; }
     else { tail.next = s.T; s.T.prev = tail; }
     group.forEach(joints);
@@ -392,10 +462,12 @@
 
   function showSnap(s) {
     const el = s ? s.T.el : null;
-    if (el === snapEl) return;
-    if (snapEl) snapEl.classList.remove('snap-target');
+    const cls = s ? (s.side === 'slot' ? 'snap-slot' : 'snap-target') : '';
+    if (el === snapEl && cls === snapCls) return;
+    if (snapEl) snapEl.classList.remove('snap-target', 'snap-slot');
     snapEl = el;
-    if (snapEl) snapEl.classList.add('snap-target');
+    snapCls = cls;
+    if (snapEl) snapEl.classList.add(cls);
   }
 
   /* ---------- dragging ---------- */
@@ -416,7 +488,8 @@
       moved: false,
       kind: el.classList.contains('stock-tile') ? 'stock' : 'placed',
       el,
-      group: []
+      group: [],
+      all: []
     };
   });
 
@@ -429,21 +502,27 @@
       drag.group = [t];
     } else {
       const t = drag.el._tile;
-      if (t.prev) {            // pull this tile (and everything to its right) away
+      if (t.holder) {            // lift a tile out of a slot
+        setCarried(t, null);
+      } else if (t.prev) {       // pull this tile (and everything to its right) away
         const p = t.prev;
         p.next = null; t.prev = null;
         joints(p); joints(t);
       }
       drag.group = chainFrom(t);
     }
+    // tiles riding in the slots of the dragged tiles come along
+    const riders = drag.group.map(g => g.carry).filter(Boolean);
+    drag.all = drag.group.concat(riders);
+
     const head = drag.group[0];
     const last = drag.group[drag.group.length - 1];
     const p0 = local(drag.sx, drag.sy);
     drag.offX = p0.x - head.x;
     drag.offY = p0.y - head.y;
-    drag.rel = drag.group.map(g => ({ dx: g.x - head.x, dy: g.y - head.y }));
+    drag.rel = drag.all.map(g => ({ dx: g.x - head.x, dy: g.y - head.y }));
     drag.W = last.x + last.w - head.x;
-    drag.group.forEach(g => {
+    drag.all.forEach(g => {
       layer.appendChild(g.el);
       g.el.classList.add('dragging');
     });
@@ -459,14 +538,14 @@
     const p = local(e.clientX, e.clientY);
     const hx = clamp(p.x - drag.offX, 0, DW - drag.W);
     const hy = clamp(p.y - drag.offY, 0, board.offsetHeight - TH);
-    drag.group.forEach((g, i) => {
+    drag.all.forEach((g, i) => {
       g.x = hx + drag.rel[i].dx;
       g.y = hy + drag.rel[i].dy;
       place(g);
     });
     const discard = overStock(e.clientX, e.clientY);
-    drag.group.forEach(g => g.el.classList.toggle('discard', discard));
-    showSnap(discard ? null : findSnap(drag.group));
+    drag.all.forEach(g => g.el.classList.toggle('discard', discard));
+    showSnap(discard ? null : findSnap(drag.group, drag.all));
   });
 
   function endDrag(e, allowSnap) {
@@ -475,14 +554,14 @@
     drag = null;
     showSnap(null);
     if (!d.moved) return;
-    d.group.forEach(g => g.el.classList.remove('dragging', 'discard'));
+    d.all.forEach(g => g.el.classList.remove('dragging', 'discard'));
     if (overStock(e.clientX, e.clientY)) {
-      d.group.forEach(removeTile);
+      d.all.forEach(removeTile);
       return;
     }
     if (allowSnap) {
-      const s = findSnap(d.group);
-      if (s) applySnap(d.group, s);
+      const s = findSnap(d.group, d.all);
+      if (s) applySnap(d.group, s, d.all);
     }
   }
   window.addEventListener('pointerup', e => endDrag(e, true));
