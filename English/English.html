@@ -29,7 +29,7 @@
 
   body {
     margin: 0;
-    padding: 16px 12px 32px;
+    padding: max(16px, env(safe-area-inset-top, 0px)) 12px max(32px, env(safe-area-inset-bottom, 0px));
     background: var(--page);
     font-family: "Sassoon Primary", "Andika", "Century Gothic", "Trebuchet MS", system-ui, sans-serif;
   }
@@ -59,12 +59,21 @@
 
   /* ---------- tile grid (the supply) ---------- */
   #stock {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .row {
     display: grid;
     grid-template-columns: repeat(9, 1fr);
     gap: 12px 10px;
   }
-  #stock .tile.wide { grid-column: span 3; }
-  #stock .tile { cursor: grab; }
+  .row .tile.wide { grid-column: span 3; }
+  .stock-tile { cursor: grab; }
+
+  /* Small screens: 5 columns, so tiles stay big enough to read and tap */
+  #board.compact .row { grid-template-columns: repeat(5, 1fr); }
+  #board.compact .row .tile.wide { grid-column: span 2; }
 
   /* ---------- work areas ---------- */
   .box {
@@ -74,8 +83,8 @@
     color: var(--label);
     font-size: 22px;
   }
-  .box.needed { margin-top: 28px; height: 170px; }
-  .box.words  { margin-top: 24px; height: 120px; }
+  .box.needed { margin-top: 24px; height: 150px; }
+  .box.words  { margin-top: 20px; height: 110px; }
 
   #clear {
     position: absolute;
@@ -113,10 +122,16 @@
   }
   .tile.red { color: var(--red); }
   .tile.long { font-size: 29px; }
-  .tile.split {
-    justify-content: space-between;
-    padding: 0 20% 2px 15%;
+  /* Letters are placed as a share of the tile's own width. (Percentage padding
+     would use the parent's width, which changes once a tile leaves the grid.) */
+  .tile.split span {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    margin-top: -1px;
   }
+  .tile.split span:first-child { left: 18%; }
+  .tile.split span:last-child  { left: 77%; }
 
   #layer {
     position: absolute;
@@ -189,7 +204,9 @@
     ['!u','!u_e','!ue','!ui','!ew','!oo','!ur']
   ];
 
-  const DW = 960;        // design width of the board
+  let DW = 960;          // design width of the board (960 wide layout, 520 compact layout)
+  let compact = false;
+  let fitted = false;
   const TH = 54;         // tile height
   const SNAP = 30;       // snap distance in design px
   const DRAG_START = 5;  // pointer travel before a drag begins
@@ -200,6 +217,7 @@
   const stock = document.getElementById('stock');
   const layer = document.getElementById('layer');
   const clearBtn = document.getElementById('clear');
+  const hint = document.querySelector('.hint');
 
   let scale = 1;
   const tiles = new Set();
@@ -229,21 +247,71 @@
     return el;
   }
 
-  ROWS.forEach(row => row.forEach(raw => {
-    const el = buildEl(raw);
-    el.classList.add('stock-tile');
-    stock.appendChild(el);
-  }));
+  ROWS.forEach(items => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    items.forEach(raw => {
+      const el = buildEl(raw);
+      el.classList.add('stock-tile');
+      row.appendChild(el);
+    });
+    stock.appendChild(row);
+  });
 
-  /* ---------- scaling ---------- */
+  /* ---------- scaling & responsive layout ---------- */
+  // Wide screens use the 9-column layout; narrow screens switch to 5 columns.
+  // Either way the board is scaled to fit the available width.
+  function remap(oldDW, oldH) {
+    const cell = stock.querySelector('.stock-tile:not(.wide)').offsetWidth;
+    const wide = stock.querySelector('.stock-tile.wide').offsetWidth;
+    const rx = DW / oldDW;
+    const ry = board.offsetHeight / oldH;
+    tiles.forEach(t => {
+      if (t.prev) return;
+      const chain = chainFrom(t);
+      chain.forEach(c => { c.w = c.el.classList.contains('wide') ? wide : cell; });
+      const W = chain.reduce((sum, c) => sum + c.w, 0);
+      let x = clamp(t.x * rx, 0, Math.max(0, DW - W));
+      const y = clamp(t.y * ry, 0, board.offsetHeight - TH);
+      chain.forEach(c => {
+        c.el.style.width = c.w + 'px';
+        c.x = x; c.y = y;
+        x += c.w;
+        place(c);
+      });
+    });
+  }
+
   function fit() {
     const avail = page.clientWidth - 24;
-    scale = Math.min(avail / DW, 1.25);
+    const wantCompact = avail < 700;
+    if (!fitted || wantCompact !== compact) {
+      const oldDW = DW, oldH = board.offsetHeight;
+      compact = wantCompact;
+      DW = compact ? 520 : 960;
+      board.classList.toggle('compact', compact);
+      board.style.width = DW + 'px';
+      if (fitted && !drag) remap(oldDW, oldH);
+      fitted = true;
+    }
+    // Fit the width, and on screens big enough to do it legibly, the height too,
+    // so the whole board is visible without scrolling.
+    const wScale = Math.min(avail / DW, 1.25);
+    const sizeFor = sc => {
+      hint.style.maxWidth = DW * sc + 'px';
+      const hintH = hint.offsetHeight + 12;
+      const padV = 16 + 24;
+      return (document.documentElement.clientHeight - hintH - padV) / board.offsetHeight;
+    };
+    const hScale = sizeFor(wScale);
+    scale = Math.min(wScale, Math.max(hScale, Math.min(wScale, 0.6)));
+    hint.style.maxWidth = DW * scale + 'px';
     board.style.transform = 'scale(' + scale + ')';
     wrap.style.width = DW * scale + 'px';
     wrap.style.height = board.offsetHeight * scale + 'px';
   }
   window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
   fit();
 
   const local = (cx, cy) => {
